@@ -131,12 +131,10 @@ class BuddyChat {
             }
 
             if (!profile || error?.code === 'PGRST116') {
-                // No profile exists - show setup card
+                // No profile exists - show setup card so user can fill out the buddy profile form
                 document.getElementById('buddySetupCard').style.display = 'block';
                 document.getElementById('profileManagementCard').style.display = 'none';
-                
-                // Create basic profile entry linked to user
-                await this.createBasicProfile();
+                // Don't auto-create profile - let user fill out the form first
                 return null;
             } else {
                 // Profile exists - show profile management card

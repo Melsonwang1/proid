@@ -377,8 +377,8 @@ function updateAuthUI() {
                 loginLink.style.display = 'none';
                 profileDropdown.style.display = 'block';
                 
-                // Set user name from user metadata or email
-                const displayName = user.user_metadata?.first_name || user.email.split('@')[0];
+                // Set user name from first_name (custom auth) or fallback to email
+                const displayName = user.first_name || user.user_metadata?.first_name || user.email.split('@')[0];
                 userName.textContent = displayName;
                 
                 // Attach signout event listener
