@@ -290,7 +290,53 @@ CREATE POLICY "Enable all access for buddy_pairs" ON public.buddy_pairs FOR ALL 
 CREATE POLICY "Enable all access for conversations" ON public.conversations FOR ALL USING (true);
 CREATE POLICY "Enable all access for messages" ON public.messages FOR ALL USING (true);
 
--- Step 12: Test the setup
+-- Step 12: Create send_message function for real-time messaging
+CREATE OR REPLACE FUNCTION send_message(
+    sender_uuid UUID, 
+    recipient_uuid UUID, 
+    message_content TEXT,
+    msg_type TEXT DEFAULT 'text'
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    message_id UUID;
+    conversation_id UUID;
+    pair_id UUID;
+BEGIN
+    -- Find the buddy pair and conversation
+    SELECT bp.id, c.id 
+    INTO pair_id, conversation_id
+    FROM buddy_pairs bp
+    JOIN conversations c ON c.buddy_pair_id = bp.id
+    WHERE (bp.user1_id = sender_uuid AND bp.user2_id = recipient_uuid)
+       OR (bp.user1_id = recipient_uuid AND bp.user2_id = sender_uuid)
+    AND bp.status = 'active';
+    
+    -- Insert the message
+    INSERT INTO messages (sender_id, recipient_id, buddy_pair_id, content, message_type)
+    VALUES (sender_uuid, recipient_uuid, pair_id, message_content, msg_type)
+    RETURNING id INTO message_id;
+    
+    -- Update conversation last activity and last message
+    UPDATE conversations 
+    SET last_message_id = message_id, last_activity = NOW()
+    WHERE id = conversation_id;
+    
+    RETURN message_id;
+END;
+$$;
+
+-- Step 13: Enable real-time replication for instant messaging
+-- Enable real-time for messages table
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+
+-- Enable real-time for conversations table  
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+
+-- Step 14: Test the setup
 SELECT 'Setup complete! Tables created and test users added.' as status;
 
 SELECT 'Users in database:' as check_type, id, email, first_name, last_name 
