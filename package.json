@@ -1,0 +1,30 @@
+{
+  "name": "ease-website",
+  "version": "1.0.0",
+  "description": "EASE - Engage Actively, Support Emotionally. A modern mental health and wellness platform.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 3000",
+    "start": "python -m http.server 8080",
+    "build": "echo 'Build completed - static site ready for deployment'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "mental health",
+    "wellness",
+    "support",
+    "emotional health",
+    "ease",
+    "therapy",
+    "mindfulness"
+  ],
+  "author": "EASE Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Melsonwang1/proid.git"
+  },
+  "homepage": "https://ease-website.vercel.app",
+  "devDependencies": {},
+  "dependencies": {}
+}
