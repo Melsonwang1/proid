@@ -1171,56 +1171,51 @@ class BuddyChat {
         
         console.log('🔗 Setting up real-time subscriptions for user:', this.currentUser.id);
         
+        // Clean up existing subscriptions first
+        this.destroy();
+        
         try {
-            // Subscribe to messages where user is either sender or recipient
+            // Subscribe to ALL new messages in the messages table
             this.messageSubscription = this.supabase
-                .channel(`messages-${this.currentUser.id}`)
+                .channel('public:messages')
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'messages',
-                    filter: `sender_id=eq.${this.currentUser.id}`
+                    table: 'messages'
                 }, (payload) => {
-                    console.log('📤 Real-time: Message sent by me:', payload.new);
-                    this.handleNewMessage(payload.new);
-                })
-                .on('postgres_changes', {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages',
-                    filter: `recipient_id=eq.${this.currentUser.id}`
-                }, (payload) => {
-                    console.log('📥 Real-time: Message received:', payload.new);
-                    this.handleNewMessage(payload.new);
+                    console.log('📨 Real-time: New message in database:', payload.new);
+                    // Check if this message is relevant to current user
+                    const message = payload.new;
+                    if (message.sender_id === this.currentUser.id || message.recipient_id === this.currentUser.id) {
+                        console.log('📨 Real-time: Message is for current user');
+                        this.handleNewMessage(message);
+                    }
                 })
                 .subscribe((status, err) => {
                     if (err) {
                         console.error('❌ Message subscription error:', err);
                     } else {
                         console.log('📡 Message subscription status:', status);
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Real-time messaging is now active!');
+                        }
                     }
                 });
 
             // Subscribe to conversation updates
             this.conversationSubscription = this.supabase
-                .channel(`conversations-${this.currentUser.id}`)
+                .channel('public:conversations')
                 .on('postgres_changes', {
                     event: 'UPDATE',
                     schema: 'public',
-                    table: 'conversations',
-                    filter: `participant1_id=eq.${this.currentUser.id}`
+                    table: 'conversations'
                 }, (payload) => {
-                    console.log('💬 Real-time: Conversation updated (participant1):', payload);
-                    this.handleConversationUpdate(payload);
-                })
-                .on('postgres_changes', {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'conversations',
-                    filter: `participant2_id=eq.${this.currentUser.id}`
-                }, (payload) => {
-                    console.log('💬 Real-time: Conversation updated (participant2):', payload);
-                    this.handleConversationUpdate(payload);
+                    console.log('💬 Real-time: Conversation updated:', payload);
+                    // Check if this conversation involves current user
+                    const conv = payload.new;
+                    if (conv.participant1_id === this.currentUser.id || conv.participant2_id === this.currentUser.id) {
+                        this.handleConversationUpdate(payload);
+                    }
                 })
                 .subscribe((status, err) => {
                     if (err) {
@@ -1236,7 +1231,14 @@ class BuddyChat {
     }
 
     handleNewMessage(message) {
-        console.log('📨 New message received:', message);
+        console.log('📨 Processing new message:', {
+            id: message.id,
+            sender: message.sender_id,
+            recipient: message.recipient_id,
+            content: message.content.substring(0, 50) + '...',
+            currentUser: this.currentUser.id,
+            currentConversation: this.currentConversation?.otherUserId
+        });
         
         // Add message to current conversation if it matches
         if (this.currentConversation) {
@@ -1244,14 +1246,19 @@ class BuddyChat {
                 (message.sender_id === this.currentUser.id && message.recipient_id === this.currentConversation.otherUserId) ||
                 (message.sender_id === this.currentConversation.otherUserId && message.recipient_id === this.currentUser.id);
                 
+            console.log('📨 Is current conversation?', isCurrentConversation);
+                
             if (isCurrentConversation) {
                 // Avoid duplicate messages if already in our list
                 const existingMessage = this.messages.find(m => m.id === message.id);
                 if (!existingMessage) {
+                    console.log('📨 Adding message to current conversation');
                     this.messages.push(message);
                     const messageElement = this.createMessageElement(message);
                     document.getElementById('chatMessages').appendChild(messageElement);
                     this.scrollToBottom();
+                } else {
+                    console.log('📨 Message already exists, skipping');
                 }
             }
         }
@@ -1265,6 +1272,43 @@ class BuddyChat {
              message.sender_id !== this.currentConversation.otherUserId)) {
             const senderName = this.userProfiles?.[message.sender_id] || 'Someone';
             window.authUtils?.showNotification(`New message from ${senderName}`, 'info');
+        }
+    }
+
+    // Add manual check for new messages (for testing)
+    async checkForNewMessages() {
+        if (!this.currentConversation) {
+            console.log('🔍 No current conversation to check');
+            return;
+        }
+        
+        console.log('🔍 Manually checking for new messages...');
+        const otherUserId = this.currentConversation.otherUserId;
+        
+        try {
+            const { data: messages, error } = await this.supabase
+                .from('messages')
+                .select('*')
+                .or(`and(sender_id.eq.${this.currentUser.id},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${this.currentUser.id})`)
+                .order('sent_at', { ascending: true });
+
+            if (!error && messages) {
+                console.log('🔍 Found messages:', messages.length);
+                const newMessages = messages.filter(msg => !this.messages.find(m => m.id === msg.id));
+                console.log('🔍 New messages found:', newMessages.length);
+                
+                if (newMessages.length > 0) {
+                    // Add new messages
+                    newMessages.forEach(msg => {
+                        this.messages.push(msg);
+                        const messageElement = this.createMessageElement(msg);
+                        document.getElementById('chatMessages').appendChild(messageElement);
+                    });
+                    this.scrollToBottom();
+                }
+            }
+        } catch (error) {
+            console.error('Error checking for messages:', error);
         }
     }
 
@@ -1299,7 +1343,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    console.log('💡 You can test chat input by calling: testChatInput()');
+    // Add function to manually check for new messages
+    window.checkMessages = function() {
+        console.log('🧪 Manually checking for new messages...');
+        if (window.buddyChat) {
+            window.buddyChat.checkForNewMessages();
+        } else {
+            console.error('❌ BuddyChat not initialized');
+        }
+    };
+    
+    // Add function to restart real-time subscriptions
+    window.restartRealtime = function() {
+        console.log('🧪 Restarting real-time subscriptions...');
+        if (window.buddyChat) {
+            window.buddyChat.setupRealtimeSubscriptions();
+        } else {
+            console.error('❌ BuddyChat not initialized');
+        }
+    };
+    
+    console.log('💡 Debug functions available:');
+    console.log('- testChatInput() - Enable chat input');
+    console.log('- checkMessages() - Manually check for new messages');
+    console.log('- restartRealtime() - Restart real-time subscriptions');
 });
 
 // Clean up on page unload
