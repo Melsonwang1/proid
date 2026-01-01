@@ -18,23 +18,28 @@ navLinks.forEach(link => {
     });
 });
 
-// Smooth scroll for navigation links
+// Smooth scroll for navigation links (only for anchor links)
 navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
-        e.preventDefault();
         const targetId = link.getAttribute('href');
-        const targetSection = document.querySelector(targetId);
         
-        if (targetSection) {
-            const headerOffset = 80;
-            const elementPosition = targetSection.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        // Only prevent default for anchor links (starting with #)
+        if (targetId.startsWith('#')) {
+            e.preventDefault();
+            const targetSection = document.querySelector(targetId);
+            
+            if (targetSection) {
+                const headerOffset = 80;
+                const elementPosition = targetSection.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
         }
+        // For .html files, let the browser handle normal navigation
     });
 });
 
