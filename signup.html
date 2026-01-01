@@ -24,7 +24,17 @@
                 <a href="book-sessions.html" class="nav-link">Book Events</a>
                 <a href="resources.html" class="nav-link">Resources</a>
                 <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
-                <a href="login.html" class="nav-link">Login</a>
+                <a href="chat.html" class="nav-link">Chat</a>
+                <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
             </div>
             <div class="nav-toggle" id="nav-toggle">
                 <span class="bar"></span>
@@ -135,9 +145,9 @@
     </footer>
 
     <!-- Supabase JavaScript SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
     <script src="script.js"></script>
-    <script src="auth-corrected.js"></script>
     <script>
         // Signup form validation and functionality
         const signupForm = document.getElementById('signupForm');
@@ -231,7 +241,7 @@
 
             // Validate terms agreement
             if (!data.agreeTerms) {
-                showNotification('Please agree to the Terms of Service and Privacy Policy', 'error');
+                window.authUtils.showNotification('Please agree to the Terms of Service and Privacy Policy', 'error');
                 isValid = false;
             }
 
@@ -241,24 +251,53 @@
         async function handleSignup(formData) {
             const submitBtn = signupForm.querySelector('.login-btn');
             const originalText = submitBtn.textContent;
+            
+            // Prevent double submission
+            if (submitBtn.disabled) {
+                return;
+            }
+            
             submitBtn.textContent = 'Creating Account...';
             submitBtn.disabled = true;
 
             try {
-                const result = await signupUser(formData);
+                const result = await window.authUtils.signupUser(formData);
                 if (result.success) {
-                    showNotification('Account created successfully! Please check your email to verify your account.', 'success');
+                    if (result.warning) {
+                        window.authUtils.showNotification(result.warning, 'warning');
+                        setTimeout(() => {
+                            window.authUtils.showNotification('Account created successfully! Please check your email to verify your account.', 'success');
+                        }, 1000);
+                    } else {
+                        window.authUtils.showNotification('Account created successfully! Please check your email to verify your account.', 'success');
+                    }
+                    
                     setTimeout(() => {
                         window.location.href = 'login.html';
-                    }, 2000);
+                    }, 3000);
                 } else {
-                    showNotification(result.error, 'error');
+                    // Handle specific errors
+                    if (result.error.includes('Too many requests')) {
+                        window.authUtils.showNotification('Too many attempts. Please wait 30 seconds and try again.', 'error');
+                        // Disable form for 30 seconds
+                        setTimeout(() => {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = originalText;
+                        }, 30000);
+                        return;
+                    } else {
+                        window.authUtils.showNotification(result.error, 'error');
+                    }
                 }
             } catch (error) {
-                showNotification('An error occurred while creating your account. Please try again.', 'error');
+                console.error('Signup error:', error);
+                window.authUtils.showNotification('An error occurred while creating your account. Please try again.', 'error');
             } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+                // Only re-enable if not rate limited
+                if (!submitBtn.textContent.includes('wait')) {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
             }
         }
 

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,7 +25,17 @@
                 <a href="book-sessions.html" class="nav-link">Book Events</a>
                 <a href="resources.html" class="nav-link">Resources</a>
                 <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
-                <a href="login.html" class="nav-link active">Login</a>
+                <a href="chat.html" class="nav-link">Chat</a>
+                <a href="login.html" class="nav-link active" id="loginLink">Login</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
             </div>
             <div class="nav-toggle" id="nav-toggle">
                 <span class="bar"></span>
@@ -112,9 +123,9 @@
     </footer>
 
     <!-- Supabase JavaScript SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
     <script src="script.js"></script>
-    <script src="auth-corrected.js"></script>
     <script>
         // Login form validation and functionality
         const loginForm = document.getElementById('loginForm');
@@ -193,16 +204,16 @@
                 submitBtn.disabled = true;
 
                 try {
-                    const result = await signinUser(email, password);
+                    const result = await window.authUtils.signinUser(email, password);
                     
                     if (result.success) {
-                        showNotification('Welcome back! Redirecting...', 'success');
+                        window.authUtils.showNotification('Welcome back! Redirecting...', 'success');
                         
                         setTimeout(() => {
                             window.location.href = 'index.html'; // Replace with dashboard URL
                         }, 1500);
                     } else {
-                        showNotification(result.error, 'error');
+                        window.authUtils.showNotification(result.error, 'error');
                         
                         // If the error indicates no account exists, suggest signup
                         if (result.error.includes('No account found')) {
@@ -215,7 +226,7 @@
                         }
                     }
                 } catch (error) {
-                    showNotification('An unexpected error occurred. Please try again.', 'error');
+                    window.authUtils.showNotification('An unexpected error occurred. Please try again.', 'error');
                 } finally {
                     submitBtn.textContent = originalText;
                     submitBtn.disabled = false;

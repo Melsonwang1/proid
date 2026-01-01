@@ -1,19 +1,36 @@
-// Supabase Authentication Module
+// Custom Authentication Module using Users Table
 // Replace these with your actual Supabase project credentials
 const SUPABASE_URL = 'https://brttakyichaccndpkotf.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U';
 
-// Initialize Supabase client
-const supabaseAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Initialize Supabase client (for database access only, not auth)
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Session storage key
+const SESSION_KEY = 'ease_user_session';
+
+// Auth state change listeners
+const authStateListeners = [];
+
+// Simple hash function for password (for demo purposes - in production use proper hashing on backend)
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 // Sign up a new user
 async function signupUser(userData) {
     try {
-        // First, check if user already exists
-        const { data: existingUser, error: checkError } = await supabaseAuth
+        console.log('Starting signup process for:', userData.email);
+        
+        // Check if user already exists
+        const { data: existingUser, error: checkError } = await supabaseClient
             .from('users')
-            .select('email')
-            .eq('email', userData.email)
+            .select('id')
+            .eq('email', userData.email.toLowerCase())
             .single();
 
         if (existingUser) {
@@ -23,49 +40,48 @@ async function signupUser(userData) {
             };
         }
 
-        // Create user account with Supabase Auth
-        const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
-            email: userData.email,
-            password: userData.password,
-            options: {
-                data: {
-                    first_name: userData.firstName,
-                    last_name: userData.lastName
-                }
-            }
-        });
+        // Hash the password
+        const passwordHash = await hashPassword(userData.password);
 
-        if (authError) {
+        // Create user in custom users table
+        const { data: newUser, error: insertError } = await supabaseClient
+            .from('users')
+            .insert([
+                {
+                    email: userData.email.toLowerCase(),
+                    first_name: userData.firstName || '',
+                    last_name: userData.lastName || '',
+                    password_hash: passwordHash
+                }
+            ])
+            .select()
+            .single();
+
+        if (insertError) {
+            console.error('Insert error details:', insertError);
             return {
                 success: false,
-                error: getErrorMessage(authError)
+                error: 'Failed to create account. Please try again.'
             };
         }
 
-        // If auth signup successful, create user record in our custom table
-        if (authData.user) {
-            const { error: insertError } = await supabaseAuth
-                .from('users')
-                .insert([
-                    {
-                        id: authData.user.id,
-                        email: userData.email,
-                        first_name: userData.firstName,
-                        last_name: userData.lastName,
-                        password_hash: 'handled_by_supabase_auth' // Supabase handles password hashing
-                    }
-                ]);
+        console.log('User created successfully:', newUser.id);
 
-            if (insertError) {
-                console.error('Error creating user record:', insertError);
-                // Note: Auth user was created but our custom table insert failed
-                // You may want to handle this scenario based on your needs
-            }
-        }
+        // Create session
+        const user = {
+            id: newUser.id,
+            email: newUser.email,
+            first_name: newUser.first_name,
+            last_name: newUser.last_name,
+            created_at: newUser.created_at
+        };
+        
+        setSession(user);
+        notifyAuthStateChange('SIGNED_IN', user);
 
         return {
             success: true,
-            user: authData.user
+            user: user
         };
 
     } catch (error) {
@@ -80,47 +96,31 @@ async function signupUser(userData) {
 // Sign in an existing user
 async function signinUser(email, password) {
     try {
-        const { data, error } = await supabaseAuth.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
+        // Hash the password
+        const passwordHash = await hashPassword(password);
 
-        if (error) {
-            // Check if it's an invalid credentials error
-            if (error.message.includes('Invalid login credentials') || 
-                error.message.includes('Email not confirmed') ||
-                error.message.includes('User not found')) {
-                
-                // Check if user exists in our database
-                const { data: userData, error: userError } = await supabaseAuth
-                    .from('users')
-                    .select('email')
-                    .eq('email', email)
-                    .single();
+        // Find user by email and password
+        const { data: user, error } = await supabaseClient
+            .from('users')
+            .select('id, email, first_name, last_name, created_at')
+            .eq('email', email.toLowerCase())
+            .eq('password_hash', passwordHash)
+            .single();
 
-                if (userError && userError.code === 'PGRST116') {
-                    // User not found in our database
-                    return {
-                        success: false,
-                        error: 'No account found with this email address. Please create an account first.'
-                    };
-                }
-                
-                return {
-                    success: false,
-                    error: 'Invalid email or password. Please check your credentials and try again.'
-                };
-            }
-            
+        if (error || !user) {
             return {
                 success: false,
-                error: getErrorMessage(error)
+                error: 'Invalid email or password. Please check your credentials.'
             };
         }
 
+        // Create session
+        setSession(user);
+        notifyAuthStateChange('SIGNED_IN', user);
+
         return {
             success: true,
-            user: data.user
+            user: user
         };
 
     } catch (error) {
@@ -135,11 +135,8 @@ async function signinUser(email, password) {
 // Sign out current user
 async function signoutUser() {
     try {
-        const { error } = await supabaseAuth.auth.signOut();
-        if (error) {
-            console.error('Signout error:', error);
-            return { success: false, error: 'Error signing out' };
-        }
+        clearSession();
+        notifyAuthStateChange('SIGNED_OUT', null);
         return { success: true };
     } catch (error) {
         console.error('Signout error:', error);
@@ -147,17 +144,11 @@ async function signoutUser() {
     }
 }
 
-// Get current user
+// Get current user from session
 async function getCurrentUser() {
     try {
-        const { data: { user }, error } = await supabaseAuth.auth.getUser();
-        
-        if (error) {
-            console.error('Get user error:', error);
-            return null;
-        }
-        
-        return user;
+        const session = getSession();
+        return session?.user || null;
     } catch (error) {
         console.error('Get user error:', error);
         return null;
@@ -167,15 +158,9 @@ async function getCurrentUser() {
 // Check authentication status
 async function checkAuthStatus() {
     try {
-        const { data: { session }, error } = await supabaseAuth.auth.getSession();
-        
-        if (error) {
-            console.error('Session error:', error);
-            return { authenticated: false, user: null };
-        }
-        
+        const session = getSession();
         return {
-            authenticated: !!session,
+            authenticated: !!session?.user,
             user: session?.user || null
         };
     } catch (error) {
@@ -184,10 +169,44 @@ async function checkAuthStatus() {
     }
 }
 
+// Session management functions
+function setSession(user) {
+    const session = {
+        user: user,
+        created_at: new Date().toISOString()
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+function getSession() {
+    try {
+        const sessionStr = localStorage.getItem(SESSION_KEY);
+        if (!sessionStr) return null;
+        return JSON.parse(sessionStr);
+    } catch (error) {
+        console.error('Error reading session:', error);
+        return null;
+    }
+}
+
+function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+}
+
 // Listen for authentication state changes
 function onAuthStateChange(callback) {
-    supabaseAuth.auth.onAuthStateChange((event, session) => {
-        callback(event, session);
+    authStateListeners.push(callback);
+}
+
+// Notify all listeners of auth state change
+function notifyAuthStateChange(event, user) {
+    const session = user ? { user } : null;
+    authStateListeners.forEach(callback => {
+        try {
+            callback(event, session);
+        } catch (error) {
+            console.error('Error in auth state listener:', error);
+        }
     });
 }
 
@@ -250,6 +269,9 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+// Export supabase client for database access in other scripts
+window.supabaseClient = supabaseClient;
+
 // Export functions for use in other scripts
 window.authUtils = {
     signupUser,
@@ -258,5 +280,6 @@ window.authUtils = {
     getCurrentUser,
     checkAuthStatus,
     onAuthStateChange,
-    showNotification
+    showNotification,
+    supabaseClient
 };

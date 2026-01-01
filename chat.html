@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buddy Chat - EASE</title>
+    <meta name="description" content="Connect and chat with your support buddies on EASE platform.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chat.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                <span class="logo-text">EASE</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="peer-support.html" class="nav-link">Peer Support</a>
+                <a href="book-sessions.html" class="nav-link">Book Events</a>
+                <a href="resources.html" class="nav-link">Resources</a>
+                <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
+                <a href="chat.html" class="nav-link active">Chat</a>
+                <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Chat Section -->
+    <section class="chat-section">
+        <div class="chat-container">
+            <!-- Sidebar -->
+            <div class="chat-sidebar">
+                <div class="sidebar-header">
+                    <h2><i class="fa-solid fa-comments"></i> Buddy Chats</h2>
+                    <button class="btn btn-primary find-buddy-btn" id="findBuddyBtn">
+                        <i class="fa-solid fa-user-plus"></i> Find Buddy
+                    </button>
+                </div>
+                
+                <!-- Buddy Profile Setup -->
+                <div class="buddy-setup-card" id="buddySetupCard" style="display: none;">
+                    <h3>Setup Your Buddy Profile</h3>
+                    <p>Complete your profile to get matched with compatible support buddies. <strong>You can only have one profile per account.</strong></p>
+                    <button class="btn btn-secondary" id="setupProfileBtn">Create Profile</button>
+                </div>
+
+                <!-- Profile Management (for users with existing profile) -->
+                <div class="profile-management-card" id="profileManagementCard" style="display: none;">
+                    <h3>Your Buddy Profile</h3>
+                    <p>Manage your existing profile or update your preferences.</p>
+                    <div class="profile-actions">
+                        <button class="btn btn-secondary" id="editProfileBtn">Edit Profile</button>
+                        <button class="btn btn-primary" id="findBuddyBtn">Find Buddy</button>
+                    </div>
+                </div>
+
+                <!-- Conversations List -->
+                <div class="conversations-list" id="conversationsList">
+                    <div class="loading-conversations">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        Loading conversations...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-main">
+                <!-- Welcome Screen -->
+                <div class="chat-welcome" id="chatWelcome">
+                    <div class="welcome-content">
+                        <i class="fa-solid fa-heart"></i>
+                        <h2>Welcome to Buddy Chat</h2>
+                        <p>Connect with supportive buddies who understand your journey. Select a conversation or find a new buddy to get started.</p>
+                    </div>
+                </div>
+
+                <!-- Active Chat -->
+                <div class="chat-active" id="chatActive" style="display: none;">
+                    <!-- Chat Header -->
+                    <div class="chat-header" id="chatHeader">
+                        <div class="chat-user-info">
+                            <div class="user-avatar">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <h3 id="chatUserName">Buddy Name</h3>
+                                <span class="user-status" id="chatUserStatus">Online</span>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="chat-action-btn" title="Archive Chat">
+                                <i class="fa-solid fa-archive"></i>
+                            </button>
+                            <button class="chat-action-btn" title="More Options">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Area -->
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message-loading">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            Loading messages...
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="chat-input-area">
+                        <div class="chat-input-container">
+                            <button class="attachment-btn" title="Attach File">
+                                <i class="fa-solid fa-paperclip"></i>
+                            </button>
+                            <div class="message-input-wrapper">
+                                <textarea 
+                                    id="messageInput" 
+                                    placeholder="Type a supportive message..." 
+                                    rows="1"
+                                    maxlength="1000"></textarea>
+                                <div class="input-actions">
+                                    <button class="emoji-btn" title="Add Emoji">
+                                        <i class="fa-regular fa-face-smile"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button class="send-btn" id="sendBtn" disabled>
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Buddy Profile Modal -->
+    <div class="modal-overlay" id="profileModalOverlay" style="display: none;">
+        <div class="modal-content profile-modal">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-user-edit"></i> Setup Buddy Profile</h2>
+                <button class="modal-close" id="closeProfileModal">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <form class="buddy-profile-form" id="buddyProfileForm">
+                <div class="form-group">
+                    <label for="bio">Bio (Tell us about yourself)</label>
+                    <textarea id="bio" name="bio" rows="3" placeholder="Share a bit about your journey and what support means to you..."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ageRange">Age Range</label>
+                        <select id="ageRange" name="ageRange" required>
+                            <option value="">Select age range</option>
+                            <option value="18-25">18-25</option>
+                            <option value="26-35">26-35</option>
+                            <option value="36-45">36-45</option>
+                            <option value="46-55">46-55</option>
+                            <option value="55+">55+</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="timezone">Timezone</label>
+                        <select id="timezone" name="timezone">
+                            <option value="">Select timezone</option>
+                            <option value="UTC-8">Pacific Time (UTC-8)</option>
+                            <option value="UTC-7">Mountain Time (UTC-7)</option>
+                            <option value="UTC-6">Central Time (UTC-6)</option>
+                            <option value="UTC-5">Eastern Time (UTC-5)</option>
+                            <option value="UTC">GMT/UTC</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="interests">Interests (Select all that apply)</label>
+                    <div class="checkbox-group" id="interestsGroup">
+                        <label><input type="checkbox" value="mindfulness"> Mindfulness & Meditation</label>
+                        <label><input type="checkbox" value="exercise"> Exercise & Fitness</label>
+                        <label><input type="checkbox" value="reading"> Reading & Learning</label>
+                        <label><input type="checkbox" value="music"> Music & Arts</label>
+                        <label><input type="checkbox" value="nature"> Nature & Outdoors</label>
+                        <label><input type="checkbox" value="cooking"> Cooking & Nutrition</label>
+                        <label><input type="checkbox" value="gaming"> Gaming & Technology</label>
+                        <label><input type="checkbox" value="travel"> Travel & Culture</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="supportGoals">Support Goals (What you're working on)</label>
+                    <div class="checkbox-group" id="supportGoalsGroup">
+                        <label><input type="checkbox" value="anxiety_management"> Anxiety Management</label>
+                        <label><input type="checkbox" value="depression_support"> Depression Support</label>
+                        <label><input type="checkbox" value="stress_relief"> Stress Relief</label>
+                        <label><input type="checkbox" value="motivation"> Motivation & Accountability</label>
+                        <label><input type="checkbox" value="self_esteem"> Self-Esteem Building</label>
+                        <label><input type="checkbox" value="social_skills"> Social Skills</label>
+                        <label><input type="checkbox" value="life_transitions"> Life Transitions</label>
+                        <label><input type="checkbox" value="grief_support"> Grief Support</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preferredCommunication">Preferred Communication</label>
+                        <select id="preferredCommunication" name="preferredCommunication">
+                            <option value="text">Text Messages</option>
+                            <option value="voice">Voice Calls</option>
+                            <option value="video">Video Calls</option>
+                            <option value="any">Any Method</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isSeekingBuddy" checked>
+                        I'm looking for a support buddy
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="isAvailableBuddy" checked>
+                        I'm available to support others
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelProfileBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Profile & Find Buddies</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-text">EASE</span>
+                </div>
+                <p class="footer-tagline">Supporting each other, one conversation at a time</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="chat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

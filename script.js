@@ -361,6 +361,108 @@ Built with love and modern web technologies.
 Need help? Contact us at support@ease.com
 `);
 
+// Authentication State Management
+function updateAuthUI() {
+    const loginLink = document.getElementById('loginLink');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const userName = document.getElementById('userName');
+    
+    if (!loginLink || !profileDropdown) return;
+    
+    // Check authentication status
+    if (window.authUtils) {
+        window.authUtils.checkAuthStatus().then(({ authenticated, user }) => {
+            if (authenticated && user) {
+                // User is logged in - show profile
+                loginLink.style.display = 'none';
+                profileDropdown.style.display = 'block';
+                
+                // Set user name from user metadata or email
+                const displayName = user.user_metadata?.first_name || user.email.split('@')[0];
+                userName.textContent = displayName;
+                
+                // Attach signout event listener
+                attachSignoutListener();
+            } else {
+                // User is not logged in - show login link
+                loginLink.style.display = 'block';
+                profileDropdown.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Separate function to handle signout event listener
+function attachSignoutListener() {
+    const signoutBtn = document.getElementById('signoutBtn');
+    if (signoutBtn) {
+        // Remove any existing event listeners to prevent duplicates
+        signoutBtn.replaceWith(signoutBtn.cloneNode(true));
+        const newSignoutBtn = document.getElementById('signoutBtn');
+        
+        newSignoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (window.authUtils) {
+                const result = await window.authUtils.signoutUser();
+                if (result.success) {
+                    updateAuthUI(); // Refresh the UI
+                    window.authUtils.showNotification('Successfully signed out!', 'success');
+                    // Optional: redirect to home page
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    window.authUtils.showNotification('Error signing out', 'error');
+                }
+            }
+        });
+    }
+}
+
+// Initialize auth UI when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for auth utilities to be loaded
+    setTimeout(updateAuthUI, 100);
+    
+    // Add click functionality to profile dropdown for mobile
+    setupProfileDropdownClicks();
+});
+
+// Setup profile dropdown click functionality
+function setupProfileDropdownClicks() {
+    document.addEventListener('click', (e) => {
+        const profileDropdown = document.getElementById('profileDropdown');
+        const dropdownContent = document.querySelector('.dropdown-content');
+        
+        if (profileDropdown && dropdownContent) {
+            // If clicking on profile link, toggle dropdown
+            if (e.target.closest('.profile-link')) {
+                e.preventDefault();
+                dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+                dropdownContent.style.opacity = dropdownContent.style.display === 'block' ? '1' : '0';
+                dropdownContent.style.transform = dropdownContent.style.display === 'block' ? 'translateY(0)' : 'translateY(-10px)';
+                dropdownContent.style.pointerEvents = dropdownContent.style.display === 'block' ? 'all' : 'none';
+            }
+            // If clicking outside, hide dropdown
+            else if (!e.target.closest('.profile-dropdown')) {
+                dropdownContent.style.display = 'none';
+                dropdownContent.style.opacity = '0';
+                dropdownContent.style.transform = 'translateY(-10px)';
+                dropdownContent.style.pointerEvents = 'none';
+            }
+        }
+    });
+}
+
+// Listen for auth state changes
+if (window.authUtils) {
+    window.authUtils.onAuthStateChange(() => {
+        updateAuthUI();
+    });
+}
+
 // Analytics placeholder (replace with actual analytics)
 function trackEvent(category, action, label) {
     // Replace with your analytics solution
