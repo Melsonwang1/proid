@@ -349,6 +349,28 @@ class BuddyChat {
                         this.userProfiles[profile.user_id] = profile.display_name || 'Unknown User';
                     });
                 }
+
+                // Fetch last message for each conversation
+                for (let conversation of this.conversations) {
+                    if (conversation.last_message_id) {
+                        const { data: lastMessage, error: messageError } = await this.supabase
+                            .from('messages')
+                            .select('content, sender_id')
+                            .eq('id', conversation.last_message_id)
+                            .single();
+                        
+                        if (!messageError && lastMessage) {
+                            // Add preview text based on who sent the message
+                            const isFromCurrentUser = lastMessage.sender_id === this.currentUser.id;
+                            const prefix = isFromCurrentUser ? 'You: ' : '';
+                            conversation.lastMessageContent = prefix + (lastMessage.content || '');
+                        } else {
+                            conversation.lastMessageContent = 'No messages yet';
+                        }
+                    } else {
+                        conversation.lastMessageContent = 'No messages yet';
+                    }
+                }
             }
             
             console.log('🔍 Loaded conversations:', this.conversations);
@@ -389,8 +411,11 @@ class BuddyChat {
 
         // Get buddy name (you could fetch this from auth.users or user_profiles)
         const buddyName = this.getBuddyDisplayName(otherUserId);
-        const lastMessage = conversation.messages?.content || 'No messages yet';
+        const lastMessage = conversation.lastMessageContent || 'No messages yet';
         const lastTime = conversation.last_activity ? this.formatTime(conversation.last_activity) : '';
+
+        // Truncate long messages for preview
+        const truncatedMessage = lastMessage.length > 50 ? lastMessage.substring(0, 50) + '...' : lastMessage;
 
         div.innerHTML = `
             <div class="conversation-avatar">
@@ -398,7 +423,7 @@ class BuddyChat {
             </div>
             <div class="conversation-details">
                 <div class="conversation-name">${buddyName}</div>
-                <div class="conversation-preview">${lastMessage}</div>
+                <div class="conversation-preview">${truncatedMessage}</div>
             </div>
             <div class="conversation-meta">
                 <div class="conversation-time">${lastTime}</div>
@@ -580,7 +605,7 @@ class BuddyChat {
 
             this.messages = messages || [];
             this.renderMessages();
-            this.scrollToBottom();
+            this.scrollToBottom(true); // Force scroll when loading conversation
 
         } catch (error) {
             console.error('Messages load error:', error);
@@ -607,6 +632,21 @@ class BuddyChat {
             const messageElement = this.createMessageElement(message);
             messagesContainer.appendChild(messageElement);
         });
+        
+        // Add scroll debugging
+        if (!messagesContainer.hasScrollListener) {
+            messagesContainer.addEventListener('scroll', (e) => {
+                const container = e.target;
+                const isAtBottom = container.scrollTop >= container.scrollHeight - container.clientHeight - 10;
+                console.log('📜 Scroll position:', {
+                    scrollTop: container.scrollTop,
+                    scrollHeight: container.scrollHeight,
+                    clientHeight: container.clientHeight,
+                    isAtBottom: isAtBottom
+                });
+            });
+            messagesContainer.hasScrollListener = true;
+        }
     }
 
     createMessageElement(message) {
@@ -636,9 +676,34 @@ class BuddyChat {
         return div.innerHTML;
     }
 
-    scrollToBottom() {
+    scrollToBottom(force = false) {
         const messagesContainer = document.getElementById('chatMessages');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (!messagesContainer) {
+            console.log('📜 No messages container found');
+            return;
+        }
+        
+        const currentScrollTop = messagesContainer.scrollTop;
+        const maxScrollTop = messagesContainer.scrollHeight - messagesContainer.clientHeight;
+        const isNearBottom = currentScrollTop >= maxScrollTop - 100;
+        
+        console.log('📜 Scroll check:', {
+            force,
+            currentScrollTop,
+            maxScrollTop,
+            isNearBottom,
+            scrollHeight: messagesContainer.scrollHeight,
+            clientHeight: messagesContainer.clientHeight,
+            willScroll: force || isNearBottom
+        });
+        
+        // Only auto-scroll if user is near bottom or if forced
+        if (force || isNearBottom) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            console.log('📜 Scrolled to bottom');
+        } else {
+            console.log('📜 User not at bottom, preserving scroll position');
+        }
     }
 
     handleMessageInputChange() {
@@ -677,7 +742,7 @@ class BuddyChat {
         this.messages.push(tempMessage);
         const messageElement = this.createMessageElement(tempMessage);
         document.getElementById('chatMessages').appendChild(messageElement);
-        this.scrollToBottom();
+        this.scrollToBottom(true); // Force scroll when user sends message
 
         // Clear input immediately for better UX
         messageInput.value = '';
@@ -1202,6 +1267,33 @@ class BuddyChat {
                     }
                 });
 
+            // Subscribe to buddy pair creation for instant pairing
+            this.buddyPairSubscription = this.supabase
+                .channel('public:buddy_pairs')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'buddy_pairs'
+                }, (payload) => {
+                    console.log('🤝 Real-time: New buddy pair created:', payload.new);
+                    const pair = payload.new;
+                    // Check if this pair involves current user
+                    if (pair.user1_id === this.currentUser.id || pair.user2_id === this.currentUser.id) {
+                        console.log('🤝 Real-time: Buddy pair involves current user');
+                        this.handleNewBuddyPair(pair);
+                    }
+                })
+                .subscribe((status, err) => {
+                    if (err) {
+                        console.error('❌ Buddy pair subscription error:', err);
+                    } else {
+                        console.log('📡 Buddy pair subscription status:', status);
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Real-time buddy pairing is now active!');
+                        }
+                    }
+                });
+
             // Subscribe to conversation updates
             this.conversationSubscription = this.supabase
                 .channel('public:conversations')
@@ -1215,6 +1307,19 @@ class BuddyChat {
                     const conv = payload.new;
                     if (conv.participant1_id === this.currentUser.id || conv.participant2_id === this.currentUser.id) {
                         this.handleConversationUpdate(payload);
+                    }
+                })
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'conversations'
+                }, (payload) => {
+                    console.log('💬 Real-time: New conversation created:', payload.new);
+                    // Check if this conversation involves current user
+                    const conv = payload.new;
+                    if (conv.participant1_id === this.currentUser.id || conv.participant2_id === this.currentUser.id) {
+                        console.log('💬 Real-time: New conversation involves current user');
+                        this.handleNewConversation(conv);
                     }
                 })
                 .subscribe((status, err) => {
@@ -1256,7 +1361,7 @@ class BuddyChat {
                     this.messages.push(message);
                     const messageElement = this.createMessageElement(message);
                     document.getElementById('chatMessages').appendChild(messageElement);
-                    this.scrollToBottom();
+                    this.scrollToBottom(); // Smart scroll - only if user is near bottom
                 } else {
                     console.log('📨 Message already exists, skipping');
                 }
@@ -1304,7 +1409,7 @@ class BuddyChat {
                         const messageElement = this.createMessageElement(msg);
                         document.getElementById('chatMessages').appendChild(messageElement);
                     });
-                    this.scrollToBottom();
+                    this.scrollToBottom(); // Smart scroll - only if user is near bottom
                 }
             }
         } catch (error) {
@@ -1313,18 +1418,82 @@ class BuddyChat {
     }
 
     handleConversationUpdate(payload) {
-        console.log('Conversation updated:', payload);
-        // Refresh conversations list
+        console.log('💬 Conversation update received:', payload);
+        // For now, just refresh conversations list when last_activity changes
+        const conv = payload.new;
+        if (conv.last_message_id !== payload.old?.last_message_id) {
+            console.log('📞 New message activity detected, refreshing sidebar');
+            this.loadConversations();
+        }
+    }
+
+    handleNewBuddyPair(pair) {
+        console.log('🤝 New buddy pair created for current user:', pair);
+        // Refresh conversations list to show the new buddy immediately
+        this.loadConversations();
+        
+        // Show a notification about the new buddy
+        const buddyId = pair.user1_id === this.currentUser.id ? pair.user2_id : pair.user1_id;
+        this.showNotification('🎉 You\'ve been paired with a new buddy!', 'success');
+        
+        console.log('✅ Buddy pairing handled successfully');
+    }
+
+    handleNewConversation(conversation) {
+        console.log('💬 New conversation created for current user:', conversation);
+        // Refresh conversations list to show the new conversation
         this.loadConversations();
     }
 
+    showNotification(message, type = 'info') {
+        // Create a simple notification element
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span>${message}</span>
+                <button class="close-btn" onclick="this.parentElement.parentElement.remove()">&times;</button>
+            </div>
+        `;
+        
+        // Style the notification
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#10B981' : '#3B82F6'};
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            font-size: 14px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+
     destroy() {
-        // Clean up subscriptions
+        console.log('🧹 Cleaning up real-time subscriptions');
         if (this.messageSubscription) {
             this.supabase.removeChannel(this.messageSubscription);
+            this.messageSubscription = null;
+        }
+        if (this.buddyPairSubscription) {
+            this.supabase.removeChannel(this.buddyPairSubscription);
+            this.buddyPairSubscription = null;
         }
         if (this.conversationSubscription) {
             this.supabase.removeChannel(this.conversationSubscription);
+            this.conversationSubscription = null;
         }
     }
 }
@@ -1367,6 +1536,26 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('- testChatInput() - Enable chat input');
     console.log('- checkMessages() - Manually check for new messages');
     console.log('- restartRealtime() - Restart real-time subscriptions');
+    console.log('- testScroll() - Test chat scrolling');
+    
+    // Add function to test scrolling
+    window.testScroll = function() {
+        const container = document.getElementById('chatMessages');
+        if (container) {
+            console.log('📜 Testing scroll - Current position:', container.scrollTop);
+            console.log('📜 Max scroll:', container.scrollHeight - container.clientHeight);
+            console.log('📜 Container height:', container.clientHeight);
+            console.log('📜 Content height:', container.scrollHeight);
+            
+            // Try scrolling to top
+            container.scrollTop = 0;
+            setTimeout(() => {
+                console.log('📜 After scroll to top:', container.scrollTop);
+            }, 100);
+        } else {
+            console.error('❌ Chat messages container not found');
+        }
+    };
 });
 
 // Clean up on page unload

@@ -663,7 +663,7 @@
     position: relative;
     scroll-behavior: smooth;
     min-height: 0; /* Important for flex children */
-    max-height: calc(100vh - 250px); /* Ensure scrollable area */
+    height: calc(100vh - 250px); /* Fixed height to enable scrolling */
 }
 
 .chat-messages::before {

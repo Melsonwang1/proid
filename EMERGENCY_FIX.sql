@@ -336,6 +336,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 -- Enable real-time for conversations table  
 ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
 
+-- Enable real-time for buddy_pairs table for instant pairing
+ALTER PUBLICATION supabase_realtime ADD TABLE public.buddy_pairs;
+
 -- Step 14: Test the setup
 SELECT 'Setup complete! Tables created and test users added.' as status;
 
