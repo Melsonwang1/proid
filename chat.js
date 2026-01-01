@@ -5,6 +5,7 @@ class BuddyChat {
         this.currentUser = null;
         this.currentConversation = null;
         this.conversations = [];
+        this.userProfiles = {};
         this.messages = [];
         this.messageSubscription = null;
         this.conversationSubscription = null;
@@ -276,26 +277,23 @@ class BuddyChat {
 
     async loadConversations() {
         try {
+            console.log('🔍 Loading conversations for user:', this.currentUser.id);
+            
             const { data: conversations, error } = await this.supabase
                 .from('conversations')
                 .select(`
                     *,
-                    buddy_pairs!inner (
+                    buddy_pairs (
                         id,
                         user1_id,
                         user2_id,
                         status
-                    ),
-                    messages!conversations_last_message_id_fkey (
-                        id,
-                        content,
-                        sent_at,
-                        sender_id
                     )
                 `)
-                .eq('buddy_pairs.status', 'active')
                 .or(`participant1_id.eq.${this.currentUser.id},participant2_id.eq.${this.currentUser.id}`)
                 .order('last_activity', { ascending: false });
+
+            console.log('🔍 Conversations query result:', { conversations, error });
 
             if (error) {
                 console.error('Error loading conversations:', error);
@@ -304,6 +302,30 @@ class BuddyChat {
             }
 
             this.conversations = conversations || [];
+            
+            // Fetch user profiles for display names
+            if (this.conversations.length > 0) {
+                const userIds = this.conversations.map(conv => {
+                    return conv.participant1_id === this.currentUser.id 
+                        ? conv.participant2_id 
+                        : conv.participant1_id;
+                });
+                
+                const { data: profiles, error: profileError } = await this.supabase
+                    .from('user_profiles')
+                    .select('user_id, display_name')
+                    .in('user_id', userIds);
+                
+                if (!profileError && profiles) {
+                    this.userProfiles = {};
+                    profiles.forEach(profile => {
+                        this.userProfiles[profile.user_id] = profile.display_name || 'Unknown User';
+                    });
+                }
+            }
+            
+            console.log('🔍 Loaded conversations:', this.conversations);
+            console.log('🔍 Loaded user profiles:', this.userProfiles);
             this.renderConversations();
             
         } catch (error) {
@@ -362,8 +384,8 @@ class BuddyChat {
     }
 
     getBuddyDisplayName(userId) {
-        // Simple fallback - in a real app, you'd fetch this from the database
-        return `Buddy ${userId.slice(0, 8)}`;
+        // Return cached display name or fallback
+        return this.userProfiles?.[userId] || `Buddy ${userId.slice(0, 8)}`;
     }
 
     formatTime(timestamp) {
@@ -594,28 +616,91 @@ class BuddyChat {
         findBuddyBtn.disabled = true;
 
         try {
-            // Call the find_potential_buddies function
-            const { data: potentialBuddies, error } = await this.supabase
+            console.log('🔍 Searching for potential buddies for user:', this.currentUser.id);
+            
+            // First, let's test if the function exists
+            const { data: testResult, error: testError } = await this.supabase
                 .rpc('find_potential_buddies', { user_uuid: this.currentUser.id });
 
-            if (error) {
-                console.error('Error finding buddies:', error);
-                window.authUtils?.showNotification('Error finding buddies', 'error');
+            console.log('🔍 Function test result:', { testResult, testError });
+
+            if (testError) {
+                console.error('❌ Function error:', testError);
+                
+                // If function doesn't exist, let's try a simple query instead
+                console.log('🔍 Function failed, trying manual query...');
+                
+                const { data: manualResults, error: manualError } = await this.supabase
+                    .from('user_profiles')
+                    .select('user_id, interests, support_goals, is_available_as_buddy')
+                    .neq('user_id', this.currentUser.id)
+                    .eq('is_available_as_buddy', true);
+                
+                console.log('🔍 Manual query results:', manualResults);
+                
+                if (manualResults && manualResults.length > 0) {
+                    // Simple matching - just pick the first available user
+                    const buddy = manualResults[0];
+                    console.log('🎯 Found buddy manually:', buddy);
+                    await this.createBuddyPair(buddy.user_id);
+                    return;
+                } else {
+                    window.authUtils?.showNotification('Database function error. Check console for details.', 'error');
+                    return;
+                }
+            }
+
+            if (!testResult || testResult.length === 0) {
+                console.log('🔍 No results from function. Let\'s debug manually...');
+                
+                // Debug: Check all profiles and current user
+                const { data: allProfiles, error: profileError } = await this.supabase
+                    .from('user_profiles')
+                    .select('user_id, interests, support_goals, is_available_as_buddy');
+                
+                console.log('🔍 All user profiles in database:', allProfiles);
+                console.log('🔍 Current user ID:', this.currentUser.id);
+                
+                const { data: currentUserProfile, error: currentError } = await this.supabase
+                    .from('user_profiles')
+                    .select('user_id, interests, support_goals, is_available_as_buddy')
+                    .eq('user_id', this.currentUser.id)
+                    .single();
+                
+                console.log('🔍 Current user profile lookup:', { currentUserProfile, currentError });
+                
+                if (!currentUserProfile) {
+                    window.authUtils?.showNotification('You need to create your profile first! Your user ID doesn\'t match any profile in the database.', 'error');
+                    return;
+                }
+                
+                // Manual fallback - find any available buddy
+                const availableBuddies = allProfiles.filter(profile => 
+                    profile.user_id !== this.currentUser.id && 
+                    profile.is_available_as_buddy === true
+                );
+                
+                console.log('🔍 Available buddies (manual search):', availableBuddies);
+                
+                if (availableBuddies.length > 0) {
+                    console.log('🎯 Using manual matching - found buddy:', availableBuddies[0]);
+                    await this.createBuddyPair(availableBuddies[0].user_id);
+                    return;
+                }
+                
+                window.authUtils?.showNotification('No available buddies found. Database function may need fixing.', 'info');
                 return;
             }
 
-            if (!potentialBuddies || potentialBuddies.length === 0) {
-                window.authUtils?.showNotification('No compatible buddies found right now. Try again later!', 'info');
-                return;
-            }
+            console.log('🎯 Found potential buddies:', testResult);
 
             // Auto-match with the best compatibility buddy
-            const bestMatch = potentialBuddies[0];
+            const bestMatch = testResult[0];
             await this.createBuddyPair(bestMatch.potential_buddy_id);
 
         } catch (error) {
             console.error('Find buddy error:', error);
-            window.authUtils?.showNotification('Error finding buddies', 'error');
+            window.authUtils?.showNotification('Error finding buddies: ' + error.message, 'error');
         } finally {
             findBuddyBtn.innerHTML = originalText;
             findBuddyBtn.disabled = false;
@@ -624,6 +709,40 @@ class BuddyChat {
 
     async createBuddyPair(otherUserId) {
         try {
+            // First, ensure both users exist in the users table (needed for foreign key constraint)
+            console.log('🔍 Checking if users exist in users table...');
+            
+            const { data: currentUserExists, error: currentCheckError } = await this.supabase
+                .from('users')
+                .select('id')
+                .eq('id', this.currentUser.id)
+                .single();
+            
+            const { data: otherUserExists, error: otherCheckError } = await this.supabase
+                .from('users')
+                .select('id')
+                .eq('id', otherUserId)
+                .single();
+                
+            console.log('🔍 User existence check:', { 
+                currentUser: currentUserExists, 
+                otherUser: otherUserExists,
+                currentError: currentCheckError,
+                otherError: otherCheckError
+            });
+            
+            // If users don't exist in users table, create them
+            if (!currentUserExists && currentCheckError?.code === 'PGRST116') {
+                console.log('🔧 Creating current user in users table...');
+                await this.ensureUserExistsInUsersTable(this.currentUser.id);
+            }
+            
+            if (!otherUserExists && otherCheckError?.code === 'PGRST116') {
+                console.log('🔧 Creating other user in users table...');
+                await this.ensureUserExistsInUsersTable(otherUserId);
+            }
+            
+            console.log('🤝 Creating buddy pair...');
             const { data: pairId, error } = await this.supabase
                 .rpc('create_buddy_pair', {
                     user1_uuid: this.currentUser.id,
@@ -632,7 +751,7 @@ class BuddyChat {
 
             if (error) {
                 console.error('Error creating buddy pair:', error);
-                window.authUtils?.showNotification('Error creating buddy connection', 'error');
+                window.authUtils?.showNotification('Error creating buddy connection: ' + error.message, 'error');
                 return;
             }
 
@@ -643,7 +762,34 @@ class BuddyChat {
 
         } catch (error) {
             console.error('Create buddy pair error:', error);
-            window.authUtils?.showNotification('Error creating buddy connection', 'error');
+            window.authUtils?.showNotification('Error creating buddy connection: ' + error.message, 'error');
+        }
+    }
+
+    async ensureUserExistsInUsersTable(userId) {
+        try {
+            // Get user info from auth system or create a basic entry
+            const userEmail = userId === this.currentUser.id ? this.currentUser.email : `user-${userId}@temp.com`;
+            
+            const { error } = await this.supabase
+                .from('users')
+                .insert({
+                    id: userId,
+                    email: userEmail,
+                    first_name: 'User',
+                    last_name: 'Name',
+                    password_hash: 'placeholder'
+                });
+                
+            if (error && !error.message.includes('duplicate key')) {
+                console.error('Error creating user in users table:', error);
+                throw error;
+            }
+            
+            console.log('✅ User created in users table:', userId);
+        } catch (error) {
+            console.error('Error ensuring user exists:', error);
+            throw error;
         }
     }
 

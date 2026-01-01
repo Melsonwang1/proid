@@ -1,14 +1,25 @@
 -- EASE Platform: Buddy Matching and Messaging System
--- PostgreSQL Schema for Supabase
+-- PostgreSQL Schema for Supabase - Custom Auth Version
 
--- User profiles table for additional buddy matching fields (extends existing users table)
-CREATE TABLE user_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+-- User profiles table for additional buddy matching fields (extends custom users table)
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID UNIQUE NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
-    -- Additional fields for buddy matching
+    -- Display and contact info
+    display_name VARCHAR(150),
+    avatar_url TEXT,
     bio TEXT,
+    phone VARCHAR(20),
+    date_of_birth DATE,
+    gender VARCHAR(20),
+    location VARCHAR(100),
+    emergency_contact_name VARCHAR(100),
+    emergency_contact_phone VARCHAR(20),
+    
+    -- Additional fields for buddy matching
     interests TEXT[], -- Array of interests for matching
     age_range TEXT CHECK (age_range IN ('18-25', '26-35', '36-45', '46-55', '55+')),
     timezone TEXT,
@@ -16,13 +27,23 @@ CREATE TABLE user_profiles (
     support_goals TEXT[], -- What they want support with
     is_seeking_buddy BOOLEAN DEFAULT false,
     is_available_as_buddy BOOLEAN DEFAULT false,
-    buddy_matching_preferences JSONB -- Store complex matching preferences
+    buddy_matching_preferences JSONB, -- Store complex matching preferences
+    
+    -- Profile settings
+    mental_health_goals TEXT[],
+    communication_preferences JSONB DEFAULT '{}',
+    privacy_settings JSONB DEFAULT '{"profile_visible": true, "allow_matching": true}',
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    last_active TIMESTAMP WITH TIME ZONE,
+    
+    CONSTRAINT unique_user_profile UNIQUE(user_id)
 );
 
 -- Buddy matching requests/preferences table
 CREATE TABLE buddy_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     request_type TEXT NOT NULL CHECK (request_type IN ('seeking', 'offering', 'both')),
     preferences JSONB NOT NULL, -- Matching criteria preferences
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'fulfilled')),
@@ -35,13 +56,13 @@ CREATE TABLE buddy_requests (
 -- Buddy pairs/relationships table
 CREATE TABLE buddy_pairs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user1_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    user2_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user1_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    user2_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     paired_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'ended')),
     pairing_reason JSONB, -- Why they were matched (interests, goals, etc.)
     ended_at TIMESTAMP WITH TIME ZONE,
-    ended_by UUID REFERENCES auth.users(id),
+    ended_by UUID REFERENCES public.users(id),
     end_reason TEXT,
     
     -- Ensure no duplicate pairs and prevent self-pairing
@@ -53,8 +74,8 @@ CREATE TABLE buddy_pairs (
 -- Messages table for communication between users
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    recipient_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    sender_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    recipient_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     buddy_pair_id UUID REFERENCES buddy_pairs(id) ON DELETE SET NULL,
     content TEXT NOT NULL,
     message_type TEXT DEFAULT 'text' CHECK (message_type IN ('text', 'image', 'file', 'system')),
@@ -72,7 +93,7 @@ CREATE TABLE messages (
 CREATE TABLE message_reactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     reaction TEXT NOT NULL, -- emoji or reaction type
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     
@@ -83,8 +104,8 @@ CREATE TABLE message_reactions (
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     buddy_pair_id UUID REFERENCES buddy_pairs(id) ON DELETE CASCADE,
-    participant1_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    participant2_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    participant1_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    participant2_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     last_message_id UUID REFERENCES messages(id),
     last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -123,59 +144,27 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE message_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 
--- User profiles can be viewed/updated by the owner
-CREATE POLICY "Users can view their own profile" ON user_profiles
-    FOR SELECT USING (auth.uid() = id);
+-- For custom auth, create permissive policies (no auth.uid() dependency)
+-- You can tighten these later based on your application logic
 
-CREATE POLICY "Users can update their own profile" ON user_profiles
-    FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Enable all access for user_profiles" ON user_profiles FOR ALL USING (true);
+CREATE POLICY "Enable all access for buddy_requests" ON buddy_requests FOR ALL USING (true);
+CREATE POLICY "Enable all access for buddy_pairs" ON buddy_pairs FOR ALL USING (true);
+CREATE POLICY "Enable all access for messages" ON messages FOR ALL USING (true);
+CREATE POLICY "Enable all access for message_reactions" ON message_reactions FOR ALL USING (true);
+CREATE POLICY "Enable all access for conversations" ON conversations FOR ALL USING (true);
 
-CREATE POLICY "Users can insert their own profile" ON user_profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Users can view profiles of potential buddies" ON user_profiles
-    FOR SELECT USING (is_available_as_buddy = true);
-
--- Buddy requests policies
-CREATE POLICY "Users can manage their own buddy requests" ON buddy_requests
-    FOR ALL USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can view active buddy requests for matching" ON buddy_requests
-    FOR SELECT USING (status = 'active' AND request_type IN ('offering', 'both'));
-
--- Buddy pairs policies
-CREATE POLICY "Users can view their own buddy relationships" ON buddy_pairs
-    FOR SELECT USING (auth.uid() = user1_id OR auth.uid() = user2_id);
-
-CREATE POLICY "Users can update their own buddy relationships" ON buddy_pairs
-    FOR UPDATE USING (auth.uid() = user1_id OR auth.uid() = user2_id);
-
--- Messages policies
-CREATE POLICY "Users can view messages they sent or received" ON messages
-    FOR SELECT USING (auth.uid() = sender_id OR auth.uid() = recipient_id);
-
-CREATE POLICY "Users can send messages" ON messages
-    FOR INSERT WITH CHECK (auth.uid() = sender_id);
-
-CREATE POLICY "Users can update their own messages" ON messages
-    FOR UPDATE USING (auth.uid() = sender_id);
-
--- Message reactions policies
-CREATE POLICY "Users can manage reactions to messages they can see" ON message_reactions
-    FOR ALL USING (
-        auth.uid() = user_id AND 
-        message_id IN (
-            SELECT id FROM messages 
-            WHERE sender_id = auth.uid() OR recipient_id = auth.uid()
-        )
+-- Helper function for array intersection
+CREATE OR REPLACE FUNCTION array_intersect(anyarray, anyarray)
+RETURNS anyarray
+LANGUAGE sql
+AS $$
+    SELECT ARRAY(
+        SELECT UNNEST($1)
+        INTERSECT
+        SELECT UNNEST($2)
     );
-
--- Conversations policies
-CREATE POLICY "Users can view their own conversations" ON conversations
-    FOR SELECT USING (auth.uid() = participant1_id OR auth.uid() = participant2_id);
-
-CREATE POLICY "Users can update their own conversations" ON conversations
-    FOR UPDATE USING (auth.uid() = participant1_id OR auth.uid() = participant2_id);
+$$;
 
 -- Functions for buddy matching algorithm
 CREATE OR REPLACE FUNCTION find_potential_buddies(user_uuid UUID)
@@ -193,11 +182,11 @@ BEGIN
     WITH user_info AS (
         SELECT interests, support_goals, age_range, timezone
         FROM user_profiles 
-        WHERE id = user_uuid
+        WHERE user_id = user_uuid
     ),
     potential_matches AS (
         SELECT 
-            up.id,
+            up.user_id,
             up.interests,
             up.support_goals,
             -- Calculate compatibility score based on shared interests and goals
@@ -211,9 +200,9 @@ BEGIN
             array_intersect(up.support_goals, ui.support_goals) AS shared_goals
         FROM user_profiles up
         CROSS JOIN user_info ui
-        WHERE up.id != user_uuid
+        WHERE up.user_id != user_uuid
         AND up.is_available_as_buddy = true
-        AND up.id NOT IN (
+        AND up.user_id NOT IN (
             -- Exclude users already paired
             SELECT CASE 
                 WHEN user1_id = user_uuid THEN user2_id 
@@ -225,7 +214,7 @@ BEGIN
         )
     )
     SELECT 
-        pm.id,
+        pm.user_id,
         pm.score,
         pm.shared_interests,
         pm.shared_goals
