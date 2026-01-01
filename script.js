@@ -56,19 +56,20 @@ window.addEventListener('scroll', () => {
 });
 
 // Contact form handling
-contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(contactForm);
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const message = formData.get('message');
-    
-    // Basic validation
-    if (!name || !email || !message) {
-        showNotification('Please fill in all fields.', 'error');
-        return;
-    }
+if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(contactForm);
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const message = formData.get('message');
+        
+        // Basic validation
+        if (!name || !email || !message) {
+            showNotification('Please fill in all fields.', 'error');
+            return;
+        }
     
     if (!isValidEmail(email)) {
         showNotification('Please enter a valid email address.', 'error');
@@ -79,6 +80,7 @@ contactForm.addEventListener('submit', (e) => {
     showNotification('Thank you for your message! We\'ll get back to you soon.', 'success');
     contactForm.reset();
 });
+}
 
 // Email validation
 function isValidEmail(email) {
@@ -374,6 +376,8 @@ buttons.forEach(button => {
 });
 
 // Track form submissions
-contactForm.addEventListener('submit', () => {
-    trackEvent('Form', 'Submit', 'Contact Form');
-});
+if (contactForm) {
+    contactForm.addEventListener('submit', () => {
+        trackEvent('Form', 'Submit', 'Contact Form');
+    });
+}

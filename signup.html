@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - EASE</title>
+    <meta name="description" content="Create your EASE account and start your personalized mental health journey.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">\n    <link rel="stylesheet" href="checkbox-fix.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                <span class="logo-text">EASE</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="peer-support.html" class="nav-link">Peer Support</a>
+                <a href="book-sessions.html" class="nav-link">Book Events</a>
+                <a href="resources.html" class="nav-link">Resources</a>
+                <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
+                <a href="login.html" class="nav-link">Login</a>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Signup Section -->
+    <section class="login-section">
+        <div class="login-container">
+            <div class="login-content">
+                <div class="login-header">
+                    <h1 class="login-title">Join EASE</h1>
+                    <p class="login-subtitle">Create your account and begin your wellness journey</p>
+                </div>
+
+                <form class="login-form" id="signupForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" required placeholder="Enter your first name">
+                            <span class="error-message" id="firstNameError"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" required placeholder="Enter your last name">
+                            <span class="error-message" id="lastNameError"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                        <span class="error-message" id="emailError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="password" name="password" required placeholder="Create a password">
+                            <button type="button" class="password-toggle" id="passwordToggle">
+                                <span class="password-toggle-icon">👁️</span>
+                            </button>
+                        </div>
+                        <span class="error-message" id="passwordError"></span>
+                        <p class="password-hint">Password must be at least 8 characters long</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                            <button type="button" class="password-toggle" id="confirmPasswordToggle">
+                                <span class="password-toggle-icon">👁️</span>
+                            </button>
+                        </div>
+                        <span class="error-message" id="confirmPasswordError"></span>
+                    </div>
+
+                    <div class="form-options">
+                        <label class="checkbox-container" for="agreeTerms">
+                            <input type="checkbox" id="agreeTerms" name="agreeTerms" required tabindex="0">
+                            <span class="checkmark"></span>
+                            I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="privacy-link">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary login-btn">Create Account</button>
+                </form>
+
+                <div class="login-footer">
+                    <p>Already have an account? <a href="login.html" class="signup-link">Sign in here</a></p>
+                    <div class="divider">
+                        <span>or</span>
+                    </div>
+                    <p class="guest-access">
+                        <a href="index.html" class="guest-link">Continue as Guest</a>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="login-visual">
+                <div class="login-illustration">
+                    <div class="floating-elements">
+                        <div class="element element-1">🌟</div>
+                        <div class="element element-2">🦋</div>
+                        <div class="element element-3">🌿</div>
+                        <div class="element element-4">💕</div>
+                    </div>
+                    <div class="login-message">
+                        <h3>Start your wellness journey today</h3>
+                        <p>Join our supportive community and access personalized mental health resources.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                    <span class="logo-text">EASE</span>
+                </div>
+                <p class="footer-tagline">Calm support at your own pace</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EASE. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Supabase JavaScript SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <script src="auth-corrected.js"></script>
+    <script>
+        // Signup form validation and functionality
+        const signupForm = document.getElementById('signupForm');
+        const firstNameInput = document.getElementById('firstName');
+        const lastNameInput = document.getElementById('lastName');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const agreeTermsInput = document.getElementById('agreeTerms');
+        
+        const passwordToggle = document.getElementById('passwordToggle');
+        const confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+
+        // Password visibility toggles
+        passwordToggle.addEventListener('click', () => {
+            togglePasswordVisibility(passwordInput, passwordToggle);
+        });
+
+        confirmPasswordToggle.addEventListener('click', () => {
+            togglePasswordVisibility(confirmPasswordInput, confirmPasswordToggle);
+        });
+
+        function togglePasswordVisibility(input, toggle) {
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+            
+            const icon = toggle.querySelector('.password-toggle-icon');
+            icon.textContent = type === 'password' ? '👁️' : '🙈';
+        }
+
+        // Form submission
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearErrors();
+
+            const formData = {
+                firstName: firstNameInput.value.trim(),
+                lastName: lastNameInput.value.trim(),
+                email: emailInput.value.trim(),
+                password: passwordInput.value,
+                confirmPassword: confirmPasswordInput.value,
+                agreeTerms: agreeTermsInput.checked
+            };
+
+            if (validateSignupForm(formData)) {
+                await handleSignup(formData);
+            }
+        });
+
+        function validateSignupForm(data) {
+            let isValid = true;
+
+            // Validate first name
+            if (!data.firstName) {
+                showError(firstNameInput, document.getElementById('firstNameError'), 'First name is required');
+                isValid = false;
+            }
+
+            // Validate last name
+            if (!data.lastName) {
+                showError(lastNameInput, document.getElementById('lastNameError'), 'Last name is required');
+                isValid = false;
+            }
+
+            // Validate email
+            if (!data.email) {
+                showError(emailInput, document.getElementById('emailError'), 'Email is required');
+                isValid = false;
+            } else if (!validateEmail(data.email)) {
+                showError(emailInput, document.getElementById('emailError'), 'Please enter a valid email address');
+                isValid = false;
+            }
+
+            // Validate password
+            if (!data.password) {
+                showError(passwordInput, document.getElementById('passwordError'), 'Password is required');
+                isValid = false;
+            } else if (data.password.length < 8) {
+                showError(passwordInput, document.getElementById('passwordError'), 'Password must be at least 8 characters long');
+                isValid = false;
+            }
+
+            // Validate confirm password
+            if (!data.confirmPassword) {
+                showError(confirmPasswordInput, document.getElementById('confirmPasswordError'), 'Please confirm your password');
+                isValid = false;
+            } else if (data.password !== data.confirmPassword) {
+                showError(confirmPasswordInput, document.getElementById('confirmPasswordError'), 'Passwords do not match');
+                isValid = false;
+            }
+
+            // Validate terms agreement
+            if (!data.agreeTerms) {
+                showNotification('Please agree to the Terms of Service and Privacy Policy', 'error');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        async function handleSignup(formData) {
+            const submitBtn = signupForm.querySelector('.login-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
+
+            try {
+                const result = await signupUser(formData);
+                if (result.success) {
+                    showNotification('Account created successfully! Please check your email to verify your account.', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('An error occurred while creating your account. Please try again.', 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Utility functions
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('.error-message');
+            const inputs = document.querySelectorAll('input');
+            
+            errorElements.forEach(el => el.textContent = '');
+            inputs.forEach(input => input.classList.remove('error'));
+        }
+
+        function showError(input, errorElement, message) {
+            input.classList.add('error');
+            errorElement.textContent = message;
+        }
+    </script>
+</body>
+</html>

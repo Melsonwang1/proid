@@ -1,0 +1,21 @@
+/* Checkbox accessibility fixes */
+#agreeTerms {
+    position: relative !important;
+    opacity: 1 !important;
+    display: inline-block !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 8px !important;
+}
+
+#agreeTerms:focus {
+    outline: 2px solid var(--accent-purple);
+    outline-offset: 2px;
+}
+
+/* Make checkbox visible and focusable */
+.checkbox-container input[type="checkbox"] {
+    position: relative !important;
+    opacity: 1 !important;
+    display: inline-block !important;
+}
