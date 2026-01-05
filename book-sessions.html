@@ -146,13 +146,158 @@
             color: var(--primary-color);
         }
 
-        .vote-link {
+        .request-events {
             text-align: center;
             margin: 2rem 0;
             padding: 1.5rem;
             background: linear-gradient(135deg, #fff4e6, #f0f8ff);
             border-radius: 15px;
             border: 2px dashed var(--primary-color);
+        }
+
+        .events-info {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
+            border-radius: 10px;
+        }
+
+        /* Event Request Form Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .vote-btn, .interest-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .vote-btn:hover, .interest-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            color: white;
+        }
+
+        .interest-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .interest-btn:hover {
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .event-note {
+            text-align: center;
+            color: var(--text-color);
+            font-style: italic;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .event-type {
+            font-size: 0.8rem;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .vote-link-btn {
@@ -241,30 +386,25 @@
     <!-- Session Types Section -->
     <section class="services">
         <div class="container">
-            <h2 class="section-title">This Week's Events</h2>
+            <h2 class="section-title">Available Events</h2>
             
-            <div class="week-selector">
-                <p>Showing events for: <span class="current-week" id="currentWeekDisplay">This Week</span></p>
-                <div class="week-navigation">
-                    <button class="week-nav-btn" onclick="showPreviousWeek()">← Previous Week</button>
-                    <button class="week-nav-btn" onclick="showThisWeek()">This Week</button>
-                    <button class="week-nav-btn" onclick="showNextWeek()">Next Week →</button>
-                </div>
+            <div class="events-info">
+                <p>Browse our included wellness events and activities. All events are free and open to all members!</p>
             </div>
 
-            <div class="vote-link">
-                <h3>Want to influence future events?</h3>
-                <p>Vote for upcoming events and help us schedule the most popular times!</p>
-                <a href="voting.html" class="vote-link-btn">
-                    <i class="fa-solid fa-vote-yea"></i> Vote for Events
-                </a>
+            <div class="request-events">
+                <h3>Don't see what you're looking for?</h3>
+                <p>Request new events or activities that you'd like to see added to our program!</p>
+                <button class="btn btn-primary" onclick="openEventRequestForm()">
+                    <i class="fa-solid fa-plus"></i> Request New Event
+                </button>
             </div>
             
             <div class="services-grid" id="eventsContainer">
                 <!-- Events will be loaded dynamically -->
                 <div class="loading-placeholder">
                     <i class="fa-solid fa-spinner fa-spin"></i>
-                    <p>Loading scheduled events...</p>
+                    <p>Loading available events...</p>
                 </div>
             </div>
         </div>
@@ -401,28 +541,24 @@
                 eventsContainer.innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-spinner fa-spin"></i>
-                        <p>Loading scheduled events...</p>
+                        <p>Loading available events...</p>
                     </div>
                 `;
 
-                const { start, end } = getWeekRange(currentWeekOffset);
-
-                // Fetch scheduled events with confirmed timeslots for the selected week
+                // Fetch all available events including those in voting
                 const { data: events, error: eventsError } = await supabaseClient
                     .from('events')
                     .select(`
                         *,
-                        event_timeslots!inner (
+                        event_timeslots (
                             id,
                             proposed_datetime,
                             day_of_week,
                             time_slot
                         )
                     `)
-                    .eq('status', 'scheduled')
-                    .gte('event_timeslots.proposed_datetime', start.toISOString())
-                    .lte('event_timeslots.proposed_datetime', end.toISOString())
-                    .order('event_timeslots.proposed_datetime', { ascending: true });
+                    .in('status', ['active', 'scheduled', 'upcoming', 'voting', 'pending'])
+                    .order('created_at', { ascending: false });
 
                 if (eventsError) throw eventsError;
 
@@ -444,7 +580,7 @@
                 renderScheduledEvents(events || []);
 
             } catch (error) {
-                console.error('Error loading scheduled events:', error);
+                console.error('Error loading available events:', error);
                 document.getElementById('eventsContainer').innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-exclamation-circle"></i>
@@ -462,8 +598,8 @@
                 eventsContainer.innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-calendar-xmark"></i>
-                        <p>No scheduled events for this week.</p>
-                        <p>Check out our <a href="voting.html">voting page</a> to help us schedule future events!</p>
+                        <p>No available events at the moment.</p>
+                        <p>Check out our <a href="voting.html">voting page</a> to help us decide on future events!</p>
                     </div>
                 `;
                 return;
@@ -472,46 +608,80 @@
             const eventsHTML = events.map(event => {
                 const userRegistration = userRegistrations.get(event.id);
                 const isRegistered = !!userRegistration;
-
-                // Get the scheduled timeslot
-                const timeslot = event.event_timeslots[0]; // Should only be one for scheduled events
-                const eventDate = new Date(timeslot.proposed_datetime);
-                const dateString = eventDate.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-                const timeString = eventDate.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
-
-                return `
-                    <div class="event-card" data-event-id="${event.id}">
-                        <div class="event-status">Scheduled</div>
-                        <div class="event-header">
-                            <div class="event-icon">${event.icon}</div>
-                            <div>
-                                <h3>${event.title}</h3>
-                                <p class="event-duration">${event.duration_minutes} minutes</p>
-                            </div>
-                        </div>
-                        <p class="event-description">${event.description}</p>
-                        
+                
+                // Check if event has timeslots
+                const hasTimeslot = event.event_timeslots && event.event_timeslots.length > 0;
+                let dateTimeContent = '';
+                let statusText = 'Available';
+                
+                if (hasTimeslot) {
+                    const timeslot = event.event_timeslots[0];
+                    const eventDate = new Date(timeslot.proposed_datetime);
+                    const dateString = eventDate.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    const timeString = eventDate.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                    
+                    dateTimeContent = `
                         <div class="event-datetime">
                             <div class="event-date">${dateString}</div>
                             <div class="event-time">${timeString}</div>
                         </div>
+                    `;
+                    statusText = 'Scheduled';
+                } else {
+                    dateTimeContent = `
+                        <div class="event-datetime">
+                            <div class="event-note">
+                                <i class="fa-solid fa-vote-yea"></i>
+                                Time to be determined by voting
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="event-card" data-event-id="${event.id}">
+                        <div class="event-status">${statusText}</div>
+                        <div class="event-header">
+                            <div class="event-icon">${event.icon || '📅'}</div>
+                            <div>
+                                <h3>${event.title}</h3>
+                                <p class="event-duration">${event.duration_minutes} minutes</p>
+                                <span class="event-type">${event.event_type}</span>
+                            </div>
+                        </div>
+                        <p class="event-description">${event.description}</p>
+                        
+                        ${dateTimeContent}
                         
                         <div class="event-actions">
-                            <a href="#" class="register-btn ${isRegistered ? 'registered' : ''}"
-                               onclick="toggleRegistration('${event.id}')"
-                               ${!currentUser || !currentUser.id ? 'title="Please login to register"' : ''}>
-                                <i class="fa-solid fa-${isRegistered ? 'check' : 'calendar-plus'}"></i>
-                                ${isRegistered ? 'Registered!' : 'Register for Event'}
-                            </a>
+                            ${hasTimeslot ? `
+                                <a href="#" class="register-btn ${isRegistered ? 'registered' : ''}"
+                                   onclick="toggleRegistration('${event.id}')"
+                                   ${!currentUser || !currentUser.id ? 'title="Please login to register"' : ''}>
+                                    <i class="fa-solid fa-${isRegistered ? 'check' : 'calendar-plus'}"></i>
+                                    ${isRegistered ? 'Registered!' : 'Register for Event'}
+                                </a>
+                            ` : `
+                                <a href="voting.html" class="vote-btn">
+                                    <i class="fa-solid fa-vote-yea"></i>
+                                    Vote on Time
+                                </a>
+                                <a href="#" class="interest-btn"
+                                   onclick="toggleInterest('${event.id}')"
+                                   ${!currentUser || !currentUser.id ? 'title="Please login to show interest"' : ''}>
+                                    <i class="fa-solid fa-heart"></i>
+                                    Show Interest
+                                </a>
+                            `}
                         </div>
                     </div>
                 `;
@@ -580,6 +750,160 @@
             updateWeekDisplay();
             loadScheduledEvents();
         }
+
+        function openEventRequestForm() {
+            document.getElementById('eventRequestModal').style.display = 'flex';
+        }
+
+        function closeEventRequestForm() {
+            document.getElementById('eventRequestModal').style.display = 'none';
+            document.getElementById('eventRequestForm').reset();
+        }
+
+        // Handle event request form submission
+        document.getElementById('eventRequestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const formData = {
+                    title: document.getElementById('eventTitle').value,
+                    category: document.getElementById('eventCategory').value,
+                    description: document.getElementById('eventDescription').value,
+                    preferred_duration: document.getElementById('preferredDuration').value || null,
+                    additional_notes: document.getElementById('additionalNotes').value || null,
+                    requested_by: getCurrentUserId(),
+                    status: 'requested',
+                    created_at: new Date().toISOString()
+                };
+
+                const { data, error } = await supabase
+                    .from('event_requests')
+                    .insert([formData]);
+
+                if (error) {
+                    throw error;
+                }
+
+                alert('Event request submitted successfully! We will review your request and get back to you.');
+                closeEventRequestForm();
+
+            } catch (error) {
+                console.error('Error submitting event request:', error);
+                alert('Error submitting request. Please try again.');
+            }
+        });
+
+        // Close modal when clicking outside of it
+        document.getElementById('eventRequestModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeEventRequestForm();
+            }
+        });
+
+        async function toggleInterest(eventId) {
+            if (!currentUser || !currentUser.id) {
+                alert('Please login to show interest in events');
+                return;
+            }
+
+            try {
+                // Check if user already showed interest
+                const { data: existingInterest, error: checkError } = await supabaseClient
+                    .from('event_interest')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('event_id', eventId);
+
+                if (checkError) throw checkError;
+
+                if (existingInterest && existingInterest.length > 0) {
+                    // Remove interest
+                    const { error: deleteError } = await supabaseClient
+                        .from('event_interest')
+                        .delete()
+                        .eq('user_id', currentUser.id)
+                        .eq('event_id', eventId);
+
+                    if (deleteError) throw deleteError;
+                    alert('Interest removed successfully');
+                } else {
+                    // Add interest
+                    const { error: insertError } = await supabaseClient
+                        .from('event_interest')
+                        .insert([{
+                            user_id: currentUser.id,
+                            event_id: eventId,
+                            created_at: new Date().toISOString()
+                        }]);
+
+                    if (insertError) throw insertError;
+                    alert('Interest registered successfully! This helps us understand demand.');
+                }
+
+                // Reload events to update the display
+                await loadScheduledEvents();
+
+            } catch (error) {
+                console.error('Error toggling interest:', error);
+                alert('Error processing interest. Please try again.');
+            }
+        }
     </script>
+
+    <!-- Event Request Form Modal -->
+    <div id="eventRequestModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Request New Event</h3>
+                <button class="close-btn" onclick="closeEventRequestForm()">&times;</button>
+            </div>
+            
+            <form id="eventRequestForm">
+                <div class="form-group">
+                    <label for="eventTitle" class="form-label">Event Title *</label>
+                    <input type="text" id="eventTitle" class="form-input" required placeholder="Enter event title">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventCategory" class="form-label">Category *</label>
+                    <select id="eventCategory" class="form-select" required>
+                        <option value="">Select a category</option>
+                        <option value="group_therapy">Group Therapy</option>
+                        <option value="mental_health">Mental Health Workshop</option>
+                        <option value="wellness">Wellness Activity</option>
+                        <option value="peer_support">Peer Support</option>
+                        <option value="educational">Educational Session</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventDescription" class="form-label">Description *</label>
+                    <textarea id="eventDescription" class="form-textarea" required placeholder="Describe the event you'd like to see offered..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="preferredDuration" class="form-label">Preferred Duration</label>
+                    <select id="preferredDuration" class="form-select">
+                        <option value="">No preference</option>
+                        <option value="30">30 minutes</option>
+                        <option value="60">1 hour</option>
+                        <option value="90">1.5 hours</option>
+                        <option value="120">2 hours</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="additionalNotes" class="form-label">Additional Notes</label>
+                    <textarea id="additionalNotes" class="form-textarea" placeholder="Any additional information or special requirements..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEventRequestForm()">Cancel</button>
+                    <button type="submit" class="btn">Submit Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

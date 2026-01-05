@@ -340,7 +340,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.buddy_pairs;
 
 -- Step 14: Create voting and events system tables
-CREATE TABLE public.events (
+CREATE TABLE IF NOT EXISTS public.events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -348,13 +348,33 @@ CREATE TABLE public.events (
     icon VARCHAR(10),
     duration_minutes INTEGER NOT NULL DEFAULT 60,
     max_participants INTEGER DEFAULT 50,
-    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'scheduled', 'active', 'completed', 'cancelled')),
+    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'voting', 'scheduled', 'active', 'upcoming', 'pending', 'completed', 'cancelled')),
     created_by UUID REFERENCES public.users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE public.event_timeslots (
+-- Update existing events table constraint if it exists
+DO $$ 
+BEGIN
+    -- Drop the old constraint if it exists
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints 
+               WHERE constraint_name = 'events_status_check' 
+               AND table_name = 'events' 
+               AND table_schema = 'public') THEN
+        ALTER TABLE public.events DROP CONSTRAINT events_status_check;
+    END IF;
+    
+    -- Add the new constraint with updated status values
+    ALTER TABLE public.events ADD CONSTRAINT events_status_check 
+    CHECK (status IN ('proposed', 'voting', 'scheduled', 'active', 'upcoming', 'pending', 'completed', 'cancelled'));
+EXCEPTION 
+    WHEN duplicate_object THEN 
+        -- Constraint already exists with correct values, do nothing
+        NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.event_timeslots (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
     proposed_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -365,7 +385,25 @@ CREATE TABLE public.event_timeslots (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE public.event_votes (
+-- Add unique constraint if it doesn't exist
+DO $$ 
+BEGIN
+    -- Add the unique constraint if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'event_timeslots_event_id_proposed_datetime_key' 
+        AND table_name = 'event_timeslots' 
+        AND table_schema = 'public'
+    ) THEN
+        ALTER TABLE public.event_timeslots ADD CONSTRAINT event_timeslots_event_id_proposed_datetime_key UNIQUE(event_id, proposed_datetime);
+    END IF;
+EXCEPTION 
+    WHEN duplicate_object THEN 
+        -- Constraint already exists, do nothing
+        NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.event_votes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -377,7 +415,7 @@ CREATE TABLE public.event_votes (
     UNIQUE(user_id, event_id, timeslot_id, vote_type)
 );
 
-CREATE TABLE public.event_registrations (
+CREATE TABLE IF NOT EXISTS public.event_registrations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
@@ -388,70 +426,75 @@ CREATE TABLE public.event_registrations (
     UNIQUE(user_id, event_id)
 );
 
--- Step 15: Insert sample events
+-- Step 15: Insert sample events (with conflict handling)
 INSERT INTO public.events (id, title, description, event_type, icon, duration_minutes, max_participants, status) VALUES 
 (
-    gen_random_uuid(),
+    '11111111-1111-1111-1111-111111111111'::UUID,
     'Mindfulness Meditation',
     'Guided meditation and mindfulness practices to reduce stress and increase awareness.',
     'mindfulness',
     '🧘‍♀️',
     45,
     25,
-    'proposed'
+    'voting'
 ),
 (
-    gen_random_uuid(),
+    '22222222-2222-2222-2222-222222222222'::UUID,
     'Art Therapy Session',
     'Express yourself through creative activities in a supportive group environment.',
     'art_therapy',
     '🎨',
     90,
     15,
-    'proposed'
+    'voting'
 ),
 (
-    gen_random_uuid(),
+    '33333333-3333-3333-3333-333333333333'::UUID,
     'Wellness Workshop',
     'Learn coping strategies, stress management, and self-care techniques.',
     'workshop',
     '💪',
     60,
     30,
-    'proposed'
+    'voting'
 ),
 (
-    gen_random_uuid(),
+    '44444444-4444-4444-4444-444444444444'::UUID,
     'Nature Therapy Walk',
     'Outdoor events combining nature exposure with therapeutic activities.',
     'nature_therapy',
     '🌿',
     120,
     20,
-    'proposed'
+    'voting'
 ),
 (
-    gen_random_uuid(),
+    '55555555-5555-5555-5555-555555555555'::UUID,
     'Educational Seminar',
     'Learn about mental health topics from expert speakers and facilitators.',
     'seminar',
     '📚',
     45,
     50,
-    'proposed'
+    'voting'
 ),
 (
-    gen_random_uuid(),
+    '66666666-6666-6666-6666-666666666666'::UUID,
     'Group Social Activity',
     'Fun, social activities designed to build connections and boost mood.',
     'group_activity',
     '🤝',
     120,
     25,
-    'proposed'
-);
+    'voting'
+)
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    description = EXCLUDED.description,
+    status = EXCLUDED.status,
+    updated_at = NOW();
 
--- Step 16: Insert sample timeslots for events
+-- Step 16: Insert sample timeslots for events (with conflict handling)
 INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
 SELECT 
     e.id,
@@ -469,7 +512,8 @@ SELECT
 FROM public.events e
 CROSS JOIN (
     VALUES ('09:00'), ('14:00'), ('18:00')
-) AS times(time_slot);
+) AS times(time_slot)
+ON CONFLICT (event_id, proposed_datetime) DO NOTHING;
 
 -- Add weekend slots
 INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
@@ -481,7 +525,8 @@ SELECT
 FROM public.events e
 CROSS JOIN (
     VALUES ('10:00'), ('15:00')
-) AS times(time_slot);
+) AS times(time_slot)
+ON CONFLICT (event_id, proposed_datetime) DO NOTHING;
 
 -- Step 17: Create voting functions
 CREATE OR REPLACE FUNCTION vote_for_event(
@@ -560,6 +605,12 @@ ALTER TABLE public.event_timeslots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Enable all access for events" ON public.events;
+DROP POLICY IF EXISTS "Enable all access for event_timeslots" ON public.event_timeslots;
+DROP POLICY IF EXISTS "Enable all access for event_votes" ON public.event_votes;
+DROP POLICY IF EXISTS "Enable all access for event_registrations" ON public.event_registrations;
+
 -- Create policies for new tables
 CREATE POLICY "Enable all access for events" ON public.events FOR ALL USING (true);
 CREATE POLICY "Enable all access for event_timeslots" ON public.event_timeslots FOR ALL USING (true);
@@ -577,3 +628,78 @@ FROM public.user_profiles;
 
 SELECT 'Events available:' as check_type, id, title, event_type, status
 FROM public.events;
+
+-- Create event_requests table for user requested events
+CREATE TABLE IF NOT EXISTS public.event_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    preferred_duration INTEGER, -- minutes
+    additional_notes TEXT,
+    requested_by UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    status VARCHAR(50) DEFAULT 'requested' CHECK (status IN ('requested', 'under_review', 'approved', 'rejected', 'implemented')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reviewed_by UUID REFERENCES public.users(id),
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    review_notes TEXT
+);
+
+-- Enable RLS on event_requests
+ALTER TABLE public.event_requests ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for event_requests
+CREATE POLICY "Users can view all event requests" 
+ON public.event_requests 
+FOR SELECT 
+USING (true);
+
+CREATE POLICY "Users can insert event requests" 
+ON public.event_requests 
+FOR INSERT 
+WITH CHECK (true);
+
+CREATE POLICY "Users can update event requests" 
+ON public.event_requests 
+FOR UPDATE 
+USING (true);
+
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS idx_event_requests_requested_by ON public.event_requests(requested_by);
+CREATE INDEX IF NOT EXISTS idx_event_requests_status ON public.event_requests(status);
+CREATE INDEX IF NOT EXISTS idx_event_requests_created_at ON public.event_requests(created_at);
+
+-- Create event_interest table for users to show interest in events
+CREATE TABLE IF NOT EXISTS public.event_interest (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, event_id)
+);
+
+-- Enable RLS on event_interest
+ALTER TABLE public.event_interest ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for event_interest
+CREATE POLICY "Users can view all event interest" 
+ON public.event_interest 
+FOR SELECT 
+USING (true);
+
+CREATE POLICY "Users can insert event interest" 
+ON public.event_interest 
+FOR INSERT 
+WITH CHECK (true);
+
+CREATE POLICY "Users can delete event interest" 
+ON public.event_interest 
+FOR DELETE 
+USING (true);
+
+-- Create index for better performance
+CREATE INDEX IF NOT EXISTS idx_event_interest_user_id ON public.event_interest(user_id);
+CREATE INDEX IF NOT EXISTS idx_event_interest_event_id ON public.event_interest(event_id);
+
+SELECT 'Event requests table created successfully!' as status;
