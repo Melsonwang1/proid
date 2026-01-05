@@ -4,6 +4,47 @@ const navMenu = document.getElementById('nav-menu');
 const navLinks = document.querySelectorAll('.nav-link');
 const contactForm = document.querySelector('.contact-form');
 
+// Initialize navigation auth state
+document.addEventListener('DOMContentLoaded', async function() {
+    // Wait a bit for auth.js to be ready
+    setTimeout(async () => {
+        try {
+            if (typeof getCurrentUser === 'function') {
+                const currentUser = await getCurrentUser();
+                updateNavigationForAuth(currentUser);
+            }
+        } catch (error) {
+            console.error('Auth check error in navigation:', error);
+            updateNavigationForAuth(null);
+        }
+    }, 100);
+});
+
+// Function to update navigation based on auth state
+function updateNavigationForAuth(user) {
+    const chatLink = document.getElementById('chatLink');
+    const loginLink = document.getElementById('loginLink');
+    const profileDropdown = document.getElementById('profileDropdown');
+    
+    if (user && user.id) {
+        // User is logged in
+        if (chatLink) chatLink.style.display = 'block';
+        if (loginLink) loginLink.style.display = 'none';
+        if (profileDropdown) {
+            profileDropdown.style.display = 'block';
+            const userName = document.getElementById('userName');
+            if (userName) {
+                userName.textContent = user.first_name || user.email;
+            }
+        }
+    } else {
+        // User not logged in
+        if (chatLink) chatLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'block';
+        if (profileDropdown) profileDropdown.style.display = 'none';
+    }
+}
+
 // Mobile Navigation Toggle
 navToggle.addEventListener('click', () => {
     navMenu.classList.toggle('active');

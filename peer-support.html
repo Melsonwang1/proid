@@ -25,7 +25,7 @@
                 <a href="book-sessions.html" class="nav-link">Events</a>
                 <a href="resources.html" class="nav-link">Resources</a>
                 <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
-                <a href="chat.html" class="nav-link">Chat</a>
+                <a href="chat.html" class="nav-link" id="chatLink" style="display: none;">Chat</a>
                 <a href="login.html" class="nav-link" id="loginLink">Login</a>
                 <div class="profile-dropdown" id="profileDropdown" style="display: none;">
                     <a href="#" class="profile-link" id="profileLink">
@@ -74,37 +74,37 @@
                     <div class="service-icon">💙</div>
                     <h3>Anxiety Support</h3>
                     <p>Connect with others managing anxiety and share coping strategies in a supportive environment.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
                 <div class="service-card">
                     <div class="service-icon">🌱</div>
                     <h3>Depression Support</h3>
                     <p>Find understanding and encouragement from peers who are on similar healing journeys.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
                 <div class="service-card">
                     <div class="service-icon">🤝</div>
                     <h3>Grief & Loss</h3>
                     <p>Share your experiences and find comfort with others who understand the grieving process.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
                 <div class="service-card">
                     <div class="service-icon">🎓</div>
                     <h3>Student Support</h3>
                     <p>Connect with fellow students dealing with academic stress and life transitions.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
                 <div class="service-card">
                     <div class="service-icon">💪</div>
                     <h3>Recovery Support</h3>
                     <p>Join others on the path to recovery and sobriety in a judgment-free space.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
                 <div class="service-card">
                     <div class="service-icon">👨‍👩‍👧‍👦</div>
                     <h3>Family Support</h3>
                     <p>Support for families dealing with mental health challenges and relationship issues.</p>
-                    <button class="btn btn-secondary">Find Buddies</button>
+                    <a href="#" class="btn btn-secondary" onclick="checkAuthAndRedirect()">Find Buddies</a>
                 </div>
             </div>
         </div>
@@ -178,5 +178,62 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="auth.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Check authentication and redirect appropriately for Find Buddies
+        async function checkAuthAndRedirect() {
+            try {
+                const currentUser = await getCurrentUser();
+                if (currentUser && currentUser.id) {
+                    // User is logged in, redirect to chat
+                    window.location.href = 'chat.html';
+                } else {
+                    // User not logged in, redirect to login
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                // Default to login page if there's an error
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize auth state and show/hide chat link
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const currentUser = await getCurrentUser();
+                const chatLink = document.getElementById('chatLink');
+                const loginLink = document.getElementById('loginLink');
+                const profileDropdown = document.getElementById('profileDropdown');
+                
+                if (currentUser && currentUser.id) {
+                    // User is logged in
+                    if (chatLink) chatLink.style.display = 'block';
+                    if (loginLink) loginLink.style.display = 'none';
+                    if (profileDropdown) {
+                        profileDropdown.style.display = 'block';
+                        const userName = document.getElementById('userName');
+                        if (userName) {
+                            userName.textContent = currentUser.first_name || currentUser.email;
+                        }
+                    }
+                } else {
+                    // User not logged in
+                    if (chatLink) chatLink.style.display = 'none';
+                    if (loginLink) loginLink.style.display = 'block';
+                    if (profileDropdown) profileDropdown.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Auth initialization error:', error);
+                // Default to logged out state
+                const chatLink = document.getElementById('chatLink');
+                const loginLink = document.getElementById('loginLink');
+                const profileDropdown = document.getElementById('profileDropdown');
+                
+                if (chatLink) chatLink.style.display = 'none';
+                if (loginLink) loginLink.style.display = 'block';
+                if (profileDropdown) profileDropdown.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
