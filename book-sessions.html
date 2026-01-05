@@ -3,13 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Events - EASE</title>
+    <title>Events - EASE</title>
     <meta name="description" content="Book free wellness events, workshops, and group activities to support your mental health journey.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Voting System Styles */
+        .voting-instructions {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .event-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .event-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+
+        .event-votes {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .timeslots-container {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .timeslot-voting {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0.5rem 0;
+            padding: 0.8rem;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .timeslot-voting:hover {
+            border-color: var(--primary-color);
+        }
+
+        .timeslot-voting.voted {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .timeslot-info {
+            flex-grow: 1;
+        }
+
+        .timeslot-time {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .timeslot-day {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .vote-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vote-btn {
+            background: none;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .vote-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .vote-btn.voted {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .vote-count {
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+            color: var(--primary-color);
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .vote-for-event-btn {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+            border: none;
+            color: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .vote-for-event-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .vote-for-event-btn.voted {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .voting-actions {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .voting-results {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-item {
+            padding: 1rem;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .loading-placeholder {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .loading-placeholder .fa-spinner {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .vote-controls {
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+            
+            .event-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -22,7 +224,7 @@
             <div class="nav-menu" id="nav-menu">
                 <a href="index.html" class="nav-link">Home</a>
                 <a href="peer-support.html" class="nav-link">Peer Support</a>
-                <a href="book-sessions.html" class="nav-link active">Book Events</a>
+                <a href="book-sessions.html" class="nav-link active">Events</a>
                 <a href="resources.html" class="nav-link">Resources</a>
                 <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
                 <a href="chat.html" class="nav-link">Chat</a>
@@ -50,7 +252,7 @@
         <div class="hero-container">
             <div class="hero-content">
                 <h1 class="hero-title">
-                    <span class="hero-ease">Book Events</span>
+                    <span class="hero-ease">Events</span>
                     <span class="hero-subtitle">Free wellness events and workshops at your pace</span>
                 </h1>
                 <p class="hero-description">
@@ -65,71 +267,32 @@
         </div>
     </section>
 
-    <!-- Session Types Section -->
+    <!-- Session Types Section with Voting -->
     <section class="services">
         <div class="container">
-            <h2 class="section-title">Available Events</h2>
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">🧘‍♀️</div>
-                    <h3>Mindfulness Events</h3>
-                    <p>Guided meditation and mindfulness practices to reduce stress and increase awareness.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 45 minutes</p>
-                        <p><strong>Signed Up:</strong> 23 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
+            <h2 class="section-title">Available Events - Vote for Your Preferred Times!</h2>
+            <div class="voting-instructions">
+                <p>🗳️ Vote for events you're interested in and select your preferred time slots. The most popular times will be scheduled!</p>
+            </div>
+            
+            <div class="services-grid" id="eventsContainer">
+                <!-- Events will be loaded dynamically -->
+                <div class="loading-placeholder">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <p>Loading events...</p>
                 </div>
-                <div class="service-card">
-                    <div class="service-icon">🎨</div>
-                    <h3>Art Therapy</h3>
-                    <p>Express yourself through creative activities in a supportive group environment.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 90 minutes</p>
-                        <p><strong>Signed Up:</strong> 15 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">💪</div>
-                    <h3>Wellness Workshops</h3>
-                    <p>Learn coping strategies, stress management, and self-care techniques.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 60 minutes</p>
-                        <p><strong>Signed Up:</strong> 31 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🌿</div>
-                    <h3>Nature Therapy</h3>
-                    <p>Outdoor events combining nature exposure with therapeutic activities.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 2 hours</p>
-                        <p><strong>Signed Up:</strong> 18 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">📚</div>
-                    <h3>Educational Seminars</h3>
-                    <p>Learn about mental health topics from expert speakers and facilitators.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 45 minutes</p>
-                        <p><strong>Signed Up:</strong> 42 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🤝</div>
-                    <h3>Group Activities</h3>
-                    <p>Fun, social activities designed to build connections and boost mood.</p>
-                    <div class="session-details">
-                        <p><strong>Duration:</strong> 2 hours</p>
-                        <p><strong>Signed Up:</strong> 27 people</p>
-                    </div>
-                    <button class="btn btn-primary">Join Event</button>
-                </div>
+            </div>
+            
+            <!-- Voting Results Section -->
+            <div class="voting-results" id="votingResults" style="display: none;">
+                <h3>Current Voting Results</h3>
+                <div id="resultsContainer"></div>
+                <button class="btn btn-secondary" onclick="toggleVotingResults()">Hide Results</button>
+            </div>
+            
+            <div class="voting-actions">
+                <button class="btn btn-primary" onclick="showVotingResults()">View Voting Results</button>
+                <button class="btn btn-secondary" onclick="refreshEvents()">Refresh Events</button>
             </div>
         </div>
     </section>
@@ -201,5 +364,351 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="auth.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Voting System JavaScript
+        let currentEvents = [];
+        let currentUser = null;
+        let userVotes = new Map();
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeAuth();
+            await loadEvents();
+        });
+
+        async function initializeAuth() {
+            try {
+                currentUser = await getCurrentUser();
+                if (!currentUser) {
+                    console.log('User not authenticated');
+                    // Still allow viewing events, but disable voting
+                } else {
+                    console.log('User authenticated:', currentUser.email);
+                }
+            } catch (error) {
+                console.error('Auth initialization error:', error);
+                currentUser = null;
+            }
+        }
+
+        async function loadEvents() {
+            try {
+                const eventsContainer = document.getElementById('eventsContainer');
+                
+                // Show loading
+                eventsContainer.innerHTML = `
+                    <div class="loading-placeholder">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <p>Loading events...</p>
+                    </div>
+                `;
+
+                // Fetch events with timeslots and votes
+                const { data: events, error: eventsError } = await supabaseClient
+                    .from('events')
+                    .select(`
+                        *,
+                        event_timeslots (
+                            id,
+                            proposed_datetime,
+                            day_of_week,
+                            time_slot
+                        )
+                    `)
+                    .eq('status', 'proposed');
+
+                if (eventsError) throw eventsError;
+
+                // Fetch user votes if authenticated
+                if (currentUser && currentUser.id) {
+                    console.log('Loading votes for user:', currentUser.id);
+                    const { data: votes, error: votesError } = await supabaseClient
+                        .from('event_votes')
+                        .select('*')
+                        .eq('user_id', currentUser.id);
+
+                    if (!votesError && votes) {
+                        userVotes.clear();
+                        votes.forEach(vote => {
+                            const key = `${vote.event_id}_${vote.timeslot_id || 'event'}_${vote.vote_type}`;
+                            userVotes.set(key, vote);
+                        });
+                        console.log('Loaded votes:', votes.length);
+                    } else if (votesError) {
+                        console.error('Error loading user votes:', votesError);
+                    }
+                } else {
+                    console.log('No authenticated user, skipping vote loading');
+                }
+
+                // Fetch vote counts for each timeslot
+                const { data: voteCounts, error: voteError } = await supabaseClient
+                    .from('event_votes')
+                    .select('timeslot_id, event_id, vote_type')
+                    .eq('vote_type', 'timeslot_preference');
+
+                const voteCountMap = new Map();
+                if (!voteError && voteCounts) {
+                    voteCounts.forEach(vote => {
+                        const key = `${vote.timeslot_id}`;
+                        voteCountMap.set(key, (voteCountMap.get(key) || 0) + 1);
+                    });
+                }
+
+                currentEvents = events || [];
+                renderEvents(currentEvents, voteCountMap);
+
+            } catch (error) {
+                console.error('Error loading events:', error);
+                document.getElementById('eventsContainer').innerHTML = `
+                    <div class="loading-placeholder">
+                        <i class="fa-solid fa-exclamation-circle"></i>
+                        <p>Error loading events. Please try again.</p>
+                        <button class="btn btn-primary" onclick="loadEvents()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderEvents(events, voteCountMap) {
+            const eventsContainer = document.getElementById('eventsContainer');
+            
+            if (!events || events.length === 0) {
+                eventsContainer.innerHTML = `
+                    <div class="loading-placeholder">
+                        <i class="fa-solid fa-calendar-xmark"></i>
+                        <p>No events available for voting right now.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const eventsHTML = events.map(event => {
+                const userEventVote = userVotes.get(`${event.id}_event_event_interest`);
+                const hasVotedForEvent = !!userEventVote;
+
+                // Count total votes for this event
+                const eventVotes = Array.from(userVotes.values()).filter(v => 
+                    v.event_id === event.id && v.vote_type === 'event_interest'
+                ).length;
+
+                const timeslotsHTML = event.event_timeslots?.map(slot => {
+                    const userSlotVote = userVotes.get(`${event.id}_${slot.id}_timeslot_preference`);
+                    const hasVotedForSlot = !!userSlotVote;
+                    const slotVoteCount = voteCountMap.get(slot.id) || 0;
+                    
+                    const slotDate = new Date(slot.proposed_datetime);
+                    const timeString = slotDate.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+
+                    return `
+                        <div class="timeslot-voting ${hasVotedForSlot ? 'voted' : ''}" data-slot-id="${slot.id}">
+                            <div class="timeslot-info">
+                                <div class="timeslot-time">${timeString}</div>
+                                <div class="timeslot-day">${slot.day_of_week}</div>
+                            </div>
+                            <div class="vote-controls">
+                                <div class="vote-count">${slotVoteCount}</div>
+                                <button class="vote-btn ${hasVotedForSlot ? 'voted' : ''}" 
+                                        onclick="voteForTimeslot('${event.id}', '${slot.id}')"
+                                        ${!currentUser || !currentUser.id ? 'disabled title="Please login to vote"' : ''}>
+                                    <i class="fa-solid fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('') || '<p>No time slots available</p>';
+
+                return `
+                    <div class="event-card" data-event-id="${event.id}">
+                        <div class="event-votes">${eventVotes} votes</div>
+                        <div class="event-header">
+                            <div class="event-icon">${event.icon}</div>
+                            <div>
+                                <h3>${event.title}</h3>
+                                <p class="event-duration">${event.duration_minutes} minutes</p>
+                            </div>
+                        </div>
+                        <p class="event-description">${event.description}</p>
+                        
+                        <div class="timeslots-container">
+                            <h4>Vote for your preferred time slots:</h4>
+                            ${timeslotsHTML}
+                        </div>
+                        
+                        <div class="event-actions">
+                            <button class="vote-for-event-btn ${hasVotedForEvent ? 'voted' : ''}"
+                                    onclick="voteForEvent('${event.id}')"
+                                    ${!currentUser || !currentUser.id ? 'disabled title="Please login to vote"' : ''}>
+                                <i class="fa-solid fa-thumbs-up"></i>
+                                ${hasVotedForEvent ? 'Voted!' : 'Vote for Event'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            eventsContainer.innerHTML = eventsHTML;
+        }
+
+        async function voteForEvent(eventId) {
+            if (!currentUser || !currentUser.id) {
+                alert('Please login to vote');
+                console.error('No authenticated user found');
+                return;
+            }
+
+            console.log('Voting for event:', eventId, 'User:', currentUser.id);
+
+            try {
+                const voteKey = `${eventId}_event_event_interest`;
+                const existingVote = userVotes.get(voteKey);
+
+                if (existingVote) {
+                    // Remove vote
+                    const { error } = await supabaseClient
+                        .from('event_votes')
+                        .delete()
+                        .eq('id', existingVote.id);
+
+                    if (error) throw error;
+                    userVotes.delete(voteKey);
+                } else {
+                    // Add vote
+                    const { data, error } = await supabaseClient
+                        .from('event_votes')
+                        .insert({
+                            user_id: currentUser.id,
+                            event_id: eventId,
+                            vote_type: 'event_interest',
+                            vote_value: 1
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+                    userVotes.set(voteKey, data);
+                }
+
+                // Refresh the display
+                await loadEvents();
+
+            } catch (error) {
+                console.error('Error voting for event:', error);
+                alert('Error submitting vote. Please try again.');
+            }
+        }
+
+        async function voteForTimeslot(eventId, timeslotId) {
+            if (!currentUser || !currentUser.id) {
+                alert('Please login to vote');
+                console.error('No authenticated user found');
+                return;
+            }
+
+            console.log('Voting for timeslot:', timeslotId, 'Event:', eventId, 'User:', currentUser.id);
+
+            try {
+                const voteKey = `${eventId}_${timeslotId}_timeslot_preference`;
+                const existingVote = userVotes.get(voteKey);
+
+                if (existingVote) {
+                    // Remove vote
+                    const { error } = await supabaseClient
+                        .from('event_votes')
+                        .delete()
+                        .eq('id', existingVote.id);
+
+                    if (error) throw error;
+                    userVotes.delete(voteKey);
+                } else {
+                    // Add vote
+                    const { data, error } = await supabaseClient
+                        .from('event_votes')
+                        .insert({
+                            user_id: currentUser.id,
+                            event_id: eventId,
+                            timeslot_id: timeslotId,
+                            vote_type: 'timeslot_preference',
+                            vote_value: 1
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+                    userVotes.set(voteKey, data);
+                }
+
+                // Refresh the display
+                await loadEvents();
+
+            } catch (error) {
+                console.error('Error voting for timeslot:', error);
+                alert('Error submitting vote. Please try again.');
+            }
+        }
+
+        async function showVotingResults() {
+            try {
+                const resultsContainer = document.getElementById('resultsContainer');
+                const votingResults = document.getElementById('votingResults');
+
+                // Show loading in results
+                resultsContainer.innerHTML = '<div class="loading-placeholder"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading results...</p></div>';
+                votingResults.style.display = 'block';
+
+                // Get voting results for each event
+                let resultsHTML = '';
+
+                for (const event of currentEvents) {
+                    const { data: results, error } = await supabaseClient
+                        .rpc('get_event_voting_results', { event_uuid: event.id });
+
+                    if (error) {
+                        console.error('Error getting results:', error);
+                        continue;
+                    }
+
+                    const eventVoteCount = Array.from(userVotes.values()).filter(v => 
+                        v.event_id === event.id && v.vote_type === 'event_interest'
+                    ).length;
+
+                    const timeslotResults = results?.map(result => `
+                        <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f0f0f0; border-radius: 5px;">
+                            <strong>${result.day_of_week} at ${result.time_slot}</strong>
+                            <span style="float: right;">${result.total_votes} votes</span>
+                        </div>
+                    `).join('') || 'No timeslot votes yet';
+
+                    resultsHTML += `
+                        <div class="result-item">
+                            <h4>${event.title} ${event.icon}</h4>
+                            <p><strong>Event Interest:</strong> ${eventVoteCount} votes</p>
+                            <p><strong>Preferred Time Slots:</strong></p>
+                            ${timeslotResults}
+                        </div>
+                    `;
+                }
+
+                resultsContainer.innerHTML = resultsHTML;
+
+            } catch (error) {
+                console.error('Error showing results:', error);
+                document.getElementById('resultsContainer').innerHTML = '<p>Error loading results. Please try again.</p>';
+            }
+        }
+
+        function toggleVotingResults() {
+            const votingResults = document.getElementById('votingResults');
+            votingResults.style.display = 'none';
+        }
+
+        async function refreshEvents() {
+            await loadEvents();
+        }
+    </script>
 </body>
 </html>

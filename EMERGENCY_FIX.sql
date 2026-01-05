@@ -339,7 +339,234 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
 -- Enable real-time for buddy_pairs table for instant pairing
 ALTER PUBLICATION supabase_realtime ADD TABLE public.buddy_pairs;
 
--- Step 14: Test the setup
+-- Step 14: Create voting and events system tables
+CREATE TABLE public.events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    event_type VARCHAR(50) NOT NULL,
+    icon VARCHAR(10),
+    duration_minutes INTEGER NOT NULL DEFAULT 60,
+    max_participants INTEGER DEFAULT 50,
+    status VARCHAR(20) DEFAULT 'proposed' CHECK (status IN ('proposed', 'scheduled', 'active', 'completed', 'cancelled')),
+    created_by UUID REFERENCES public.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.event_timeslots (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    proposed_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+    day_of_week VARCHAR(10),
+    time_slot VARCHAR(20),
+    is_recurring BOOLEAN DEFAULT FALSE,
+    recurrence_pattern VARCHAR(20), -- 'weekly', 'monthly', etc.
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.event_votes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    timeslot_id UUID REFERENCES public.event_timeslots(id) ON DELETE CASCADE,
+    vote_type VARCHAR(20) NOT NULL CHECK (vote_type IN ('event_interest', 'timeslot_preference')),
+    vote_value INTEGER DEFAULT 1 CHECK (vote_value BETWEEN -1 AND 5),
+    voted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(user_id, event_id, timeslot_id, vote_type)
+);
+
+CREATE TABLE public.event_registrations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
+    timeslot_id UUID REFERENCES public.event_timeslots(id) ON DELETE SET NULL,
+    registration_status VARCHAR(20) DEFAULT 'registered' CHECK (registration_status IN ('registered', 'waitlisted', 'attended', 'no_show', 'cancelled')),
+    registered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    
+    UNIQUE(user_id, event_id)
+);
+
+-- Step 15: Insert sample events
+INSERT INTO public.events (id, title, description, event_type, icon, duration_minutes, max_participants, status) VALUES 
+(
+    gen_random_uuid(),
+    'Mindfulness Meditation',
+    'Guided meditation and mindfulness practices to reduce stress and increase awareness.',
+    'mindfulness',
+    '🧘‍♀️',
+    45,
+    25,
+    'proposed'
+),
+(
+    gen_random_uuid(),
+    'Art Therapy Session',
+    'Express yourself through creative activities in a supportive group environment.',
+    'art_therapy',
+    '🎨',
+    90,
+    15,
+    'proposed'
+),
+(
+    gen_random_uuid(),
+    'Wellness Workshop',
+    'Learn coping strategies, stress management, and self-care techniques.',
+    'workshop',
+    '💪',
+    60,
+    30,
+    'proposed'
+),
+(
+    gen_random_uuid(),
+    'Nature Therapy Walk',
+    'Outdoor events combining nature exposure with therapeutic activities.',
+    'nature_therapy',
+    '🌿',
+    120,
+    20,
+    'proposed'
+),
+(
+    gen_random_uuid(),
+    'Educational Seminar',
+    'Learn about mental health topics from expert speakers and facilitators.',
+    'seminar',
+    '📚',
+    45,
+    50,
+    'proposed'
+),
+(
+    gen_random_uuid(),
+    'Group Social Activity',
+    'Fun, social activities designed to build connections and boost mood.',
+    'group_activity',
+    '🤝',
+    120,
+    25,
+    'proposed'
+);
+
+-- Step 16: Insert sample timeslots for events
+INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
+SELECT 
+    e.id,
+    CURRENT_DATE + INTERVAL '1 day' + time_slot::TIME,
+    CASE EXTRACT(DOW FROM CURRENT_DATE + INTERVAL '1 day')
+        WHEN 0 THEN 'Sunday'
+        WHEN 1 THEN 'Monday' 
+        WHEN 2 THEN 'Tuesday'
+        WHEN 3 THEN 'Wednesday'
+        WHEN 4 THEN 'Thursday'
+        WHEN 5 THEN 'Friday'
+        WHEN 6 THEN 'Saturday'
+    END,
+    time_slot
+FROM public.events e
+CROSS JOIN (
+    VALUES ('09:00'), ('14:00'), ('18:00')
+) AS times(time_slot);
+
+-- Add weekend slots
+INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
+SELECT 
+    e.id,
+    CURRENT_DATE + INTERVAL '5 days' + time_slot::TIME, -- Saturday
+    'Saturday',
+    time_slot
+FROM public.events e
+CROSS JOIN (
+    VALUES ('10:00'), ('15:00')
+) AS times(time_slot);
+
+-- Step 17: Create voting functions
+CREATE OR REPLACE FUNCTION vote_for_event(
+    user_uuid UUID,
+    event_uuid UUID,
+    timeslot_uuid UUID DEFAULT NULL,
+    vote_type_param VARCHAR(20) DEFAULT 'event_interest',
+    vote_value_param INTEGER DEFAULT 1
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    vote_id UUID;
+BEGIN
+    -- Insert or update vote
+    INSERT INTO event_votes (user_id, event_id, timeslot_id, vote_type, vote_value)
+    VALUES (user_uuid, event_uuid, timeslot_uuid, vote_type_param, vote_value_param)
+    ON CONFLICT (user_id, event_id, timeslot_id, vote_type) 
+    DO UPDATE SET 
+        vote_value = EXCLUDED.vote_value,
+        voted_at = NOW()
+    RETURNING id INTO vote_id;
+    
+    RETURN vote_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_event_voting_results(event_uuid UUID)
+RETURNS TABLE (
+    event_id UUID,
+    event_title VARCHAR(200),
+    timeslot_id UUID,
+    timeslot_datetime TIMESTAMP WITH TIME ZONE,
+    day_of_week VARCHAR(10),
+    time_slot VARCHAR(20),
+    total_votes BIGINT,
+    avg_vote_value NUMERIC
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        e.id,
+        e.title,
+        ts.id,
+        ts.proposed_datetime,
+        ts.day_of_week,
+        ts.time_slot,
+        COUNT(ev.id) as total_votes,
+        COALESCE(AVG(ev.vote_value), 0) as avg_vote_value
+    FROM events e
+    LEFT JOIN event_timeslots ts ON e.id = ts.event_id
+    LEFT JOIN event_votes ev ON ts.id = ev.timeslot_id AND ev.vote_type = 'timeslot_preference'
+    WHERE e.id = event_uuid
+    GROUP BY e.id, e.title, ts.id, ts.proposed_datetime, ts.day_of_week, ts.time_slot
+    ORDER BY total_votes DESC, avg_vote_value DESC;
+END;
+$$;
+
+-- Step 18: Create indexes for voting system
+CREATE INDEX IF NOT EXISTS idx_events_status ON public.events(status);
+CREATE INDEX IF NOT EXISTS idx_events_type ON public.events(event_type);
+CREATE INDEX IF NOT EXISTS idx_timeslots_event_id ON public.event_timeslots(event_id);
+CREATE INDEX IF NOT EXISTS idx_timeslots_datetime ON public.event_timeslots(proposed_datetime);
+CREATE INDEX IF NOT EXISTS idx_votes_user_event ON public.event_votes(user_id, event_id);
+CREATE INDEX IF NOT EXISTS idx_votes_timeslot ON public.event_votes(timeslot_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_user_event ON public.event_registrations(user_id, event_id);
+
+-- Step 19: Enable RLS for new tables
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_timeslots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_votes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_registrations ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for new tables
+CREATE POLICY "Enable all access for events" ON public.events FOR ALL USING (true);
+CREATE POLICY "Enable all access for event_timeslots" ON public.event_timeslots FOR ALL USING (true);
+CREATE POLICY "Enable all access for event_votes" ON public.event_votes FOR ALL USING (true);
+CREATE POLICY "Enable all access for event_registrations" ON public.event_registrations FOR ALL USING (true);
+
+-- Step 20: Test the setup
 SELECT 'Setup complete! Tables created and test users added.' as status;
 
 SELECT 'Users in database:' as check_type, id, email, first_name, last_name 
@@ -347,3 +574,6 @@ FROM public.users;
 
 SELECT 'User profiles:' as check_type, user_id, interests, support_goals, is_available_as_buddy
 FROM public.user_profiles;
+
+SELECT 'Events available:' as check_type, id, title, event_type, status
+FROM public.events;
