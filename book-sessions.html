@@ -11,16 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* Voting System Styles */
-        .voting-instructions {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-color);
-        }
-
+        /* Event card styles for scheduled events */
         .event-card {
             background: white;
             border-radius: 15px;
@@ -46,11 +37,11 @@
             margin-right: 1rem;
         }
 
-        .event-votes {
+        .event-status {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: var(--primary-color);
+            background: #10b981;
             color: white;
             border-radius: 20px;
             padding: 0.3rem 0.8rem;
@@ -58,83 +49,24 @@
             font-weight: 600;
         }
 
-        .timeslots-container {
-            margin: 1.5rem 0;
+        .event-datetime {
+            margin: 1rem 0;
             padding: 1rem;
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #e8f5e8, #f0f8ff);
             border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
         }
 
-        .timeslot-voting {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 0.5rem 0;
-            padding: 0.8rem;
-            background: white;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .timeslot-voting:hover {
-            border-color: var(--primary-color);
-        }
-
-        .timeslot-voting.voted {
-            border-color: var(--primary-color);
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .timeslot-info {
-            flex-grow: 1;
-        }
-
-        .timeslot-time {
+        .event-date {
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--primary-color);
+            font-size: 1.1rem;
         }
 
-        .timeslot-day {
+        .event-time {
             color: #666;
             font-size: 0.9rem;
-        }
-
-        .vote-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .vote-btn {
-            background: none;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-            border-radius: 50%;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .vote-btn:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .vote-btn.voted {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .vote-count {
-            font-weight: 600;
-            min-width: 30px;
-            text-align: center;
-            color: var(--primary-color);
+            margin-top: 0.2rem;
         }
 
         .event-actions {
@@ -143,7 +75,7 @@
             margin-top: 1.5rem;
         }
 
-        .vote-for-event-btn {
+        .register-btn {
             flex: 1;
             background: linear-gradient(135deg, var(--primary-color), #4f46e5);
             border: none;
@@ -153,36 +85,53 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
         }
 
-        .vote-for-event-btn:hover {
+        .register-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            color: white;
         }
 
-        .vote-for-event-btn.voted {
+        .register-btn.registered {
             background: linear-gradient(135deg, #10b981, #059669);
         }
 
-        .voting-actions {
+        .week-selector {
             text-align: center;
-            margin: 3rem 0;
-        }
-
-        .voting-results {
-            margin-top: 2rem;
-            padding: 2rem;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .result-item {
+            margin-bottom: 2rem;
             padding: 1rem;
-            margin: 1rem 0;
             background: #f8f9fa;
             border-radius: 10px;
-            border-left: 4px solid var(--primary-color);
+        }
+
+        .week-navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .week-nav-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .week-nav-btn:hover {
+            background: #4f46e5;
+        }
+
+        .current-week {
+            font-weight: 600;
+            color: var(--primary-color);
         }
 
         .loading-placeholder {
@@ -197,14 +146,36 @@
             color: var(--primary-color);
         }
 
+        .vote-link {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #fff4e6, #f0f8ff);
+            border-radius: 15px;
+            border: 2px dashed var(--primary-color);
+        }
+
+        .vote-link-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .vote-link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            color: white;
+        }
+
         @media (max-width: 768px) {
             .services-grid {
                 grid-template-columns: 1fr;
-            }
-            
-            .vote-controls {
-                flex-direction: column;
-                gap: 0.3rem;
             }
             
             .event-actions {
@@ -267,32 +238,34 @@
         </div>
     </section>
 
-    <!-- Session Types Section with Voting -->
+    <!-- Session Types Section -->
     <section class="services">
         <div class="container">
-            <h2 class="section-title">Available Events - Vote for Your Preferred Times!</h2>
-            <div class="voting-instructions">
-                <p>🗳️ Vote for events you're interested in and select your preferred time slots. The most popular times will be scheduled!</p>
+            <h2 class="section-title">This Week's Events</h2>
+            
+            <div class="week-selector">
+                <p>Showing events for: <span class="current-week" id="currentWeekDisplay">This Week</span></p>
+                <div class="week-navigation">
+                    <button class="week-nav-btn" onclick="showPreviousWeek()">← Previous Week</button>
+                    <button class="week-nav-btn" onclick="showThisWeek()">This Week</button>
+                    <button class="week-nav-btn" onclick="showNextWeek()">Next Week →</button>
+                </div>
+            </div>
+
+            <div class="vote-link">
+                <h3>Want to influence future events?</h3>
+                <p>Vote for upcoming events and help us schedule the most popular times!</p>
+                <a href="voting.html" class="vote-link-btn">
+                    <i class="fa-solid fa-vote-yea"></i> Vote for Events
+                </a>
             </div>
             
             <div class="services-grid" id="eventsContainer">
                 <!-- Events will be loaded dynamically -->
                 <div class="loading-placeholder">
                     <i class="fa-solid fa-spinner fa-spin"></i>
-                    <p>Loading events...</p>
+                    <p>Loading scheduled events...</p>
                 </div>
-            </div>
-            
-            <!-- Voting Results Section -->
-            <div class="voting-results" id="votingResults" style="display: none;">
-                <h3>Current Voting Results</h3>
-                <div id="resultsContainer"></div>
-                <button class="btn btn-secondary" onclick="toggleVotingResults()">Hide Results</button>
-            </div>
-            
-            <div class="voting-actions">
-                <button class="btn btn-primary" onclick="showVotingResults()">View Voting Results</button>
-                <button class="btn btn-secondary" onclick="refreshEvents()">Refresh Events</button>
             </div>
         </div>
     </section>
@@ -365,15 +338,16 @@
     <script src="auth.js"></script>
     <script src="script.js"></script>
     <script>
-        // Voting System JavaScript
-        let currentEvents = [];
+        // Scheduled Events System JavaScript
         let currentUser = null;
-        let userVotes = new Map();
+        let userRegistrations = new Map();
+        let currentWeekOffset = 0; // 0 = this week, 1 = next week, -1 = previous week
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', async function() {
             await initializeAuth();
-            await loadEvents();
+            await loadScheduledEvents();
+            updateWeekDisplay();
         });
 
         async function initializeAuth() {
@@ -381,7 +355,6 @@
                 currentUser = await getCurrentUser();
                 if (!currentUser) {
                     console.log('User not authenticated');
-                    // Still allow viewing events, but disable voting
                 } else {
                     console.log('User authenticated:', currentUser.email);
                 }
@@ -391,7 +364,36 @@
             }
         }
 
-        async function loadEvents() {
+        function getWeekRange(weekOffset = 0) {
+            const now = new Date();
+            const startOfWeek = new Date(now);
+            const day = now.getDay();
+            const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Monday as start
+            startOfWeek.setDate(diff + (weekOffset * 7));
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            endOfWeek.setHours(23, 59, 59, 999);
+
+            return { start: startOfWeek, end: endOfWeek };
+        }
+
+        function updateWeekDisplay() {
+            const display = document.getElementById('currentWeekDisplay');
+            if (currentWeekOffset === 0) {
+                display.textContent = 'This Week';
+            } else if (currentWeekOffset === 1) {
+                display.textContent = 'Next Week';
+            } else if (currentWeekOffset === -1) {
+                display.textContent = 'Last Week';
+            } else {
+                const { start } = getWeekRange(currentWeekOffset);
+                display.textContent = `Week of ${start.toLocaleDateString()}`;
+            }
+        }
+
+        async function loadScheduledEvents() {
             try {
                 const eventsContainer = document.getElementById('eventsContainer');
                 
@@ -399,132 +401,96 @@
                 eventsContainer.innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-spinner fa-spin"></i>
-                        <p>Loading events...</p>
+                        <p>Loading scheduled events...</p>
                     </div>
                 `;
 
-                // Fetch events with timeslots and votes
+                const { start, end } = getWeekRange(currentWeekOffset);
+
+                // Fetch scheduled events with confirmed timeslots for the selected week
                 const { data: events, error: eventsError } = await supabaseClient
                     .from('events')
                     .select(`
                         *,
-                        event_timeslots (
+                        event_timeslots!inner (
                             id,
                             proposed_datetime,
                             day_of_week,
                             time_slot
                         )
                     `)
-                    .eq('status', 'proposed');
+                    .eq('status', 'scheduled')
+                    .gte('event_timeslots.proposed_datetime', start.toISOString())
+                    .lte('event_timeslots.proposed_datetime', end.toISOString())
+                    .order('event_timeslots.proposed_datetime', { ascending: true });
 
                 if (eventsError) throw eventsError;
 
-                // Fetch user votes if authenticated
+                // Fetch user registrations if authenticated
                 if (currentUser && currentUser.id) {
-                    console.log('Loading votes for user:', currentUser.id);
-                    const { data: votes, error: votesError } = await supabaseClient
-                        .from('event_votes')
+                    const { data: registrations, error: regError } = await supabaseClient
+                        .from('event_registrations')
                         .select('*')
                         .eq('user_id', currentUser.id);
 
-                    if (!votesError && votes) {
-                        userVotes.clear();
-                        votes.forEach(vote => {
-                            const key = `${vote.event_id}_${vote.timeslot_id || 'event'}_${vote.vote_type}`;
-                            userVotes.set(key, vote);
+                    if (!regError && registrations) {
+                        userRegistrations.clear();
+                        registrations.forEach(reg => {
+                            userRegistrations.set(reg.event_id, reg);
                         });
-                        console.log('Loaded votes:', votes.length);
-                    } else if (votesError) {
-                        console.error('Error loading user votes:', votesError);
                     }
-                } else {
-                    console.log('No authenticated user, skipping vote loading');
                 }
 
-                // Fetch vote counts for each timeslot
-                const { data: voteCounts, error: voteError } = await supabaseClient
-                    .from('event_votes')
-                    .select('timeslot_id, event_id, vote_type')
-                    .eq('vote_type', 'timeslot_preference');
-
-                const voteCountMap = new Map();
-                if (!voteError && voteCounts) {
-                    voteCounts.forEach(vote => {
-                        const key = `${vote.timeslot_id}`;
-                        voteCountMap.set(key, (voteCountMap.get(key) || 0) + 1);
-                    });
-                }
-
-                currentEvents = events || [];
-                renderEvents(currentEvents, voteCountMap);
+                renderScheduledEvents(events || []);
 
             } catch (error) {
-                console.error('Error loading events:', error);
+                console.error('Error loading scheduled events:', error);
                 document.getElementById('eventsContainer').innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-exclamation-circle"></i>
                         <p>Error loading events. Please try again.</p>
-                        <button class="btn btn-primary" onclick="loadEvents()">Retry</button>
+                        <button class="btn btn-primary" onclick="loadScheduledEvents()">Retry</button>
                     </div>
                 `;
             }
         }
 
-        function renderEvents(events, voteCountMap) {
+        function renderScheduledEvents(events) {
             const eventsContainer = document.getElementById('eventsContainer');
             
             if (!events || events.length === 0) {
                 eventsContainer.innerHTML = `
                     <div class="loading-placeholder">
                         <i class="fa-solid fa-calendar-xmark"></i>
-                        <p>No events available for voting right now.</p>
+                        <p>No scheduled events for this week.</p>
+                        <p>Check out our <a href="voting.html">voting page</a> to help us schedule future events!</p>
                     </div>
                 `;
                 return;
             }
 
             const eventsHTML = events.map(event => {
-                const userEventVote = userVotes.get(`${event.id}_event_event_interest`);
-                const hasVotedForEvent = !!userEventVote;
+                const userRegistration = userRegistrations.get(event.id);
+                const isRegistered = !!userRegistration;
 
-                // Count total votes for this event
-                const eventVotes = Array.from(userVotes.values()).filter(v => 
-                    v.event_id === event.id && v.vote_type === 'event_interest'
-                ).length;
-
-                const timeslotsHTML = event.event_timeslots?.map(slot => {
-                    const userSlotVote = userVotes.get(`${event.id}_${slot.id}_timeslot_preference`);
-                    const hasVotedForSlot = !!userSlotVote;
-                    const slotVoteCount = voteCountMap.get(slot.id) || 0;
-                    
-                    const slotDate = new Date(slot.proposed_datetime);
-                    const timeString = slotDate.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
-
-                    return `
-                        <div class="timeslot-voting ${hasVotedForSlot ? 'voted' : ''}" data-slot-id="${slot.id}">
-                            <div class="timeslot-info">
-                                <div class="timeslot-time">${timeString}</div>
-                                <div class="timeslot-day">${slot.day_of_week}</div>
-                            </div>
-                            <div class="vote-controls">
-                                <div class="vote-count">${slotVoteCount}</div>
-                                <button class="vote-btn ${hasVotedForSlot ? 'voted' : ''}" 
-                                        onclick="voteForTimeslot('${event.id}', '${slot.id}')"
-                                        ${!currentUser || !currentUser.id ? 'disabled title="Please login to vote"' : ''}>
-                                    <i class="fa-solid fa-heart"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }).join('') || '<p>No time slots available</p>';
+                // Get the scheduled timeslot
+                const timeslot = event.event_timeslots[0]; // Should only be one for scheduled events
+                const eventDate = new Date(timeslot.proposed_datetime);
+                const dateString = eventDate.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const timeString = eventDate.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
 
                 return `
                     <div class="event-card" data-event-id="${event.id}">
-                        <div class="event-votes">${eventVotes} votes</div>
+                        <div class="event-status">Scheduled</div>
                         <div class="event-header">
                             <div class="event-icon">${event.icon}</div>
                             <div>
@@ -534,18 +500,18 @@
                         </div>
                         <p class="event-description">${event.description}</p>
                         
-                        <div class="timeslots-container">
-                            <h4>Vote for your preferred time slots:</h4>
-                            ${timeslotsHTML}
+                        <div class="event-datetime">
+                            <div class="event-date">${dateString}</div>
+                            <div class="event-time">${timeString}</div>
                         </div>
                         
                         <div class="event-actions">
-                            <button class="vote-for-event-btn ${hasVotedForEvent ? 'voted' : ''}"
-                                    onclick="voteForEvent('${event.id}')"
-                                    ${!currentUser || !currentUser.id ? 'disabled title="Please login to vote"' : ''}>
-                                <i class="fa-solid fa-thumbs-up"></i>
-                                ${hasVotedForEvent ? 'Voted!' : 'Vote for Event'}
-                            </button>
+                            <a href="#" class="register-btn ${isRegistered ? 'registered' : ''}"
+                               onclick="toggleRegistration('${event.id}')"
+                               ${!currentUser || !currentUser.id ? 'title="Please login to register"' : ''}>
+                                <i class="fa-solid fa-${isRegistered ? 'check' : 'calendar-plus'}"></i>
+                                ${isRegistered ? 'Registered!' : 'Register for Event'}
+                            </a>
                         </div>
                     </div>
                 `;
@@ -554,160 +520,65 @@
             eventsContainer.innerHTML = eventsHTML;
         }
 
-        async function voteForEvent(eventId) {
+        async function toggleRegistration(eventId) {
             if (!currentUser || !currentUser.id) {
-                alert('Please login to vote');
-                console.error('No authenticated user found');
+                alert('Please login to register for events');
                 return;
             }
 
-            console.log('Voting for event:', eventId, 'User:', currentUser.id);
-
             try {
-                const voteKey = `${eventId}_event_event_interest`;
-                const existingVote = userVotes.get(voteKey);
+                const existingRegistration = userRegistrations.get(eventId);
 
-                if (existingVote) {
-                    // Remove vote
+                if (existingRegistration) {
+                    // Remove registration
                     const { error } = await supabaseClient
-                        .from('event_votes')
+                        .from('event_registrations')
                         .delete()
-                        .eq('id', existingVote.id);
+                        .eq('id', existingRegistration.id);
 
                     if (error) throw error;
-                    userVotes.delete(voteKey);
+                    userRegistrations.delete(eventId);
                 } else {
-                    // Add vote
+                    // Add registration
                     const { data, error } = await supabaseClient
-                        .from('event_votes')
+                        .from('event_registrations')
                         .insert({
                             user_id: currentUser.id,
                             event_id: eventId,
-                            vote_type: 'event_interest',
-                            vote_value: 1
+                            registration_status: 'registered'
                         })
                         .select()
                         .single();
 
                     if (error) throw error;
-                    userVotes.set(voteKey, data);
+                    userRegistrations.set(eventId, data);
                 }
 
                 // Refresh the display
-                await loadEvents();
+                await loadScheduledEvents();
 
             } catch (error) {
-                console.error('Error voting for event:', error);
-                alert('Error submitting vote. Please try again.');
+                console.error('Error toggling registration:', error);
+                alert('Error processing registration. Please try again.');
             }
         }
 
-        async function voteForTimeslot(eventId, timeslotId) {
-            if (!currentUser || !currentUser.id) {
-                alert('Please login to vote');
-                console.error('No authenticated user found');
-                return;
-            }
-
-            console.log('Voting for timeslot:', timeslotId, 'Event:', eventId, 'User:', currentUser.id);
-
-            try {
-                const voteKey = `${eventId}_${timeslotId}_timeslot_preference`;
-                const existingVote = userVotes.get(voteKey);
-
-                if (existingVote) {
-                    // Remove vote
-                    const { error } = await supabaseClient
-                        .from('event_votes')
-                        .delete()
-                        .eq('id', existingVote.id);
-
-                    if (error) throw error;
-                    userVotes.delete(voteKey);
-                } else {
-                    // Add vote
-                    const { data, error } = await supabaseClient
-                        .from('event_votes')
-                        .insert({
-                            user_id: currentUser.id,
-                            event_id: eventId,
-                            timeslot_id: timeslotId,
-                            vote_type: 'timeslot_preference',
-                            vote_value: 1
-                        })
-                        .select()
-                        .single();
-
-                    if (error) throw error;
-                    userVotes.set(voteKey, data);
-                }
-
-                // Refresh the display
-                await loadEvents();
-
-            } catch (error) {
-                console.error('Error voting for timeslot:', error);
-                alert('Error submitting vote. Please try again.');
-            }
+        function showThisWeek() {
+            currentWeekOffset = 0;
+            updateWeekDisplay();
+            loadScheduledEvents();
         }
 
-        async function showVotingResults() {
-            try {
-                const resultsContainer = document.getElementById('resultsContainer');
-                const votingResults = document.getElementById('votingResults');
-
-                // Show loading in results
-                resultsContainer.innerHTML = '<div class="loading-placeholder"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading results...</p></div>';
-                votingResults.style.display = 'block';
-
-                // Get voting results for each event
-                let resultsHTML = '';
-
-                for (const event of currentEvents) {
-                    const { data: results, error } = await supabaseClient
-                        .rpc('get_event_voting_results', { event_uuid: event.id });
-
-                    if (error) {
-                        console.error('Error getting results:', error);
-                        continue;
-                    }
-
-                    const eventVoteCount = Array.from(userVotes.values()).filter(v => 
-                        v.event_id === event.id && v.vote_type === 'event_interest'
-                    ).length;
-
-                    const timeslotResults = results?.map(result => `
-                        <div style="margin: 0.5rem 0; padding: 0.5rem; background: #f0f0f0; border-radius: 5px;">
-                            <strong>${result.day_of_week} at ${result.time_slot}</strong>
-                            <span style="float: right;">${result.total_votes} votes</span>
-                        </div>
-                    `).join('') || 'No timeslot votes yet';
-
-                    resultsHTML += `
-                        <div class="result-item">
-                            <h4>${event.title} ${event.icon}</h4>
-                            <p><strong>Event Interest:</strong> ${eventVoteCount} votes</p>
-                            <p><strong>Preferred Time Slots:</strong></p>
-                            ${timeslotResults}
-                        </div>
-                    `;
-                }
-
-                resultsContainer.innerHTML = resultsHTML;
-
-            } catch (error) {
-                console.error('Error showing results:', error);
-                document.getElementById('resultsContainer').innerHTML = '<p>Error loading results. Please try again.</p>';
-            }
+        function showNextWeek() {
+            currentWeekOffset = 1;
+            updateWeekDisplay();
+            loadScheduledEvents();
         }
 
-        function toggleVotingResults() {
-            const votingResults = document.getElementById('votingResults');
-            votingResults.style.display = 'none';
-        }
-
-        async function refreshEvents() {
-            await loadEvents();
+        function showPreviousWeek() {
+            currentWeekOffset = -1;
+            updateWeekDisplay();
+            loadScheduledEvents();
         }
     </script>
 </body>
