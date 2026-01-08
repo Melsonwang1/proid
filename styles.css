@@ -1404,3 +1404,382 @@ html {
         gap: 0;
     }
 }
+
+/* Rewards Page Styles */
+.rewards-section {
+    padding: 120px 0 80px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+}
+
+.points-card {
+    background: linear-gradient(135deg, var(--accent-purple) 0%, #9b72cf 100%);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    box-shadow: 0 10px 30px rgba(139, 69, 19, 0.2);
+}
+
+.points-info h2 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.points-total {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.points-number {
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.points-label {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.points-icon i {
+    font-size: 64px;
+    opacity: 0.3;
+}
+
+.achievements-section,
+.progress-section,
+.levels-section {
+    margin-bottom: 50px;
+}
+
+.achievements-section h2,
+.progress-section h2,
+.levels-section h2 {
+    color: var(--neutral-charcoal);
+    margin-bottom: 24px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.achievement-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: var(--transition-smooth);
+    border: 2px solid transparent;
+}
+
+.achievement-card.unlocked {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, #fff 0%, #f8f5ff 100%);
+}
+
+.achievement-card.unlocked .achievement-icon {
+    color: var(--accent-purple);
+    background: rgba(139, 69, 19, 0.1);
+}
+
+.achievement-card.locked {
+    opacity: 0.6;
+}
+
+.achievement-card.locked .achievement-icon {
+    color: #bbb;
+    background: #f5f5f5;
+}
+
+.achievement-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.achievement-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    transition: var(--transition-smooth);
+}
+
+.achievement-card h3 {
+    margin: 0 0 8px 0;
+    color: var(--neutral-charcoal);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.achievement-card p {
+    margin: 0 0 12px 0;
+    color: #666;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.achievement-points {
+    color: var(--accent-purple);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.progress-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.progress-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.progress-header h3 {
+    margin: 0;
+    color: var(--neutral-charcoal);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.progress-count {
+    color: var(--accent-purple);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.progress-bar {
+    background: #f0f0f0;
+    border-radius: 10px;
+    height: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, var(--accent-purple) 0%, #9b72cf 100%);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.6s ease;
+}
+
+.progress-card p {
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.levels-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.level-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: var(--transition-smooth);
+    border: 2px solid transparent;
+    position: relative;
+    cursor: pointer;
+}
+
+.level-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.level-card.available {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #fff 0%, #f8fff9 100%);
+}
+
+.level-card.premium {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff 0%, #fffdf5 100%);
+}
+
+.level-card.exclusive {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, #fff 0%, #f8f5ff 100%);
+}
+
+.level-card.current {
+    border-color: var(--accent-purple);
+    background: linear-gradient(135deg, #fff 0%, #f8f5ff 100%);
+}
+
+.level-card.current::before {
+    content: 'Current Level';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent-purple);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.level-card.next {
+    border-color: var(--soft-teal);
+    background: linear-gradient(135deg, #fff 0%, #f0f9ff 100%);
+}
+
+.level-card.locked {
+    opacity: 0.6;
+}
+
+.reward-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-purple) 0%, #9b72cf 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 auto 16px;
+}
+
+.level-card.available .reward-logo {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.level-card.premium .reward-logo {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+}
+
+.level-card.exclusive .reward-logo {
+    background: linear-gradient(135deg, var(--accent-purple) 0%, #e83e8c 100%);
+}
+
+.level-number {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--accent-purple);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 auto 16px;
+}
+
+.level-card.next .level-number {
+    background: var(--soft-teal);
+}
+
+.level-card.locked .level-number {
+    background: #bbb;
+}
+
+.level-card h3 {
+    margin: 0 0 8px 0;
+    color: var(--neutral-charcoal);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.level-card > p {
+    margin: 0 0 16px 0;
+    color: #666;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.level-benefits {
+    text-align: left;
+}
+
+.level-benefits p {
+    margin: 4px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.reward-cost {
+    background: var(--accent-purple);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 12px;
+}
+
+.level-card.available .reward-cost {
+    background: #28a745;
+}
+
+.level-card.premium .reward-cost {
+    background: #ffc107;
+    color: #000;
+}
+
+.level-card.exclusive .reward-cost {
+    background: var(--accent-purple);
+}
+
+/* Mobile responsive for rewards */
+@media (max-width: 768px) {
+    .points-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .points-number {
+        font-size: 36px;
+    }
+    
+    .points-icon i {
+        font-size: 48px;
+    }
+    
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .progress-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .levels-container {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rewards - EASE</title>
+    <meta name="description" content="Track your progress and earn rewards for engaging with mental health activities.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                <span class="logo-text">EASE</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="peer-support.html" class="nav-link">Peer Support</a>
+                <a href="book-sessions.html" class="nav-link">Events</a>
+                <a href="resources.html" class="nav-link">Resources</a>
+                <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
+                <a href="chat.html" class="nav-link" id="chatLink" style="display: none;">Chat</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="rewards.html">Rewards</a>
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Rewards Section -->
+    <section class="rewards-section">
+        <div class="container">
+            <div class="section-header">
+                <h1 class="section-title">
+                    <i class="fa-solid fa-trophy"></i>
+                    Your Rewards
+                </h1>
+                <p class="section-subtitle">Track your progress and celebrate your mental health journey</p>
+            </div>
+
+            <!-- Points Display -->
+            <div class="points-card">
+                <div class="points-info">
+                    <h2>Your Points</h2>
+                    <div class="points-total">
+                        <span class="points-number" id="totalPoints">0</span>
+                        <span class="points-label">Points</span>
+                    </div>
+                </div>
+                <div class="points-icon">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+            </div>
+
+            <!-- Achievements Section -->
+            <div class="achievements-section">
+                <h2>Achievements</h2>
+                <div class="achievements-grid">
+                    <div class="achievement-card unlocked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <h3>First Connection</h3>
+                        <p>Joined your first peer support session</p>
+                        <div class="achievement-points">+10 points</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <h3>Weekly Warrior</h3>
+                        <p>Attend sessions for 7 consecutive days</p>
+                        <div class="achievement-points">+50 points</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <h3>Helper</h3>
+                        <p>Send 10 supportive messages</p>
+                        <div class="achievement-points">+25 points</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-book"></i>
+                        </div>
+                        <h3>Resource Explorer</h3>
+                        <p>Explore 5 different resources</p>
+                        <div class="achievement-points">+15 points</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-medal"></i>
+                        </div>
+                        <h3>Monthly Champion</h3>
+                        <p>Complete 30 days of activities</p>
+                        <div class="achievement-points">+100 points</div>
+                    </div>
+
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <h3>Self-Care Specialist</h3>
+                        <p>Complete all self-care challenges</p>
+                        <div class="achievement-points">+75 points</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Tracking -->
+            <div class="progress-section">
+                <h2>Your Progress</h2>
+                <div class="progress-cards" id="progressCards">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <h3>Messages Sent</h3>
+                            <span class="progress-count" id="messagesSentCount">0/10</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="messagesSentFill" style="width: 0%"></div>
+                        </div>
+                        <p id="messagesNextMilestone">Next milestone: 10 messages (+25 points)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Rewards -->
+            <div class="levels-section">
+                <h2>Available Rewards</h2>
+                <div class="levels-container">
+                    <div class="level-card available">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-coffee"></i>
+                        </div>
+                        <h3>LiHo Tea</h3>
+                        <p>$10 Voucher</p>
+                        <div class="level-benefits">
+                            <p>✓ Valid for any drink</p>
+                            <p>✓ No minimum purchase</p>
+                            <div class="reward-cost">50 points</div>
+                        </div>
+                    </div>
+
+                    <div class="level-card available">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-ice-cream"></i>
+                        </div>
+                        <h3>Mixue Ice Cream</h3>
+                        <p>$10 Voucher</p>
+                        <div class="level-benefits">
+                            <p>✓ Ice cream & beverages</p>
+                            <p>✓ Valid for 30 days</p>
+                            <div class="reward-cost">50 points</div>
+                        </div>
+                    </div>
+
+                    <div class="level-card premium">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-utensils"></i>
+                        </div>
+                        <h3>Grab Food</h3>
+                        <p>$20 Voucher</p>
+                        <div class="level-benefits">
+                            <p>✓ Any restaurant</p>
+                            <p>✓ Free delivery included</p>
+                            <div class="reward-cost">100 points</div>
+                        </div>
+                    </div>
+
+                    <div class="level-card premium">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-shopping-bag"></i>
+                        </div>
+                        <h3>Shopee</h3>
+                        <p>$25 Voucher</p>
+                        <div class="level-benefits">
+                            <p>✓ Any product category</p>
+                            <p>✓ Stackable with promotions</p>
+                            <div class="reward-cost">120 points</div>
+                        </div>
+                    </div>
+
+                    <div class="level-card exclusive">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <h3>Golden Village</h3>
+                        <p>Movie Tickets (2x)</p>
+                        <div class="level-benefits">
+                            <p>✓ Any movie, any time</p>
+                            <p>✓ Includes premium seats</p>
+                            <div class="reward-cost">150 points</div>
+                        </div>
+                    </div>
+
+                    <div class="level-card exclusive">
+                        <div class="reward-logo">
+                            <i class="fa-solid fa-spa"></i>
+                        </div>
+                        <h3>Wellness Spa</h3>
+                        <p>$50 Treatment</p>
+                        <div class="level-benefits">
+                            <p>✓ Massage or facial</p>
+                            <p>✓ Perfect for self-care</p>
+                            <div class="reward-cost">200 points</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Initialize rewards page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for auth system to be ready
+            setTimeout(() => {
+                checkAuthenticationAndLoadRewards();
+                loadMessagesSentProgress();
+            }, 200);
+            setupRewardCardClicks();
+        });
+
+        // Check authentication before loading rewards
+        function checkAuthenticationAndLoadRewards() {
+            // Use the same auth check as other pages
+            if (window.authUtils && window.authUtils.getCurrentUser) {
+                const user = window.authUtils.getCurrentUser();
+                if (user && user.id) {
+                    console.log('User authenticated:', user);
+                    loadUserRewards();
+                } else {
+                    console.log('User not authenticated');
+                }
+            } else {
+                // Fallback to localStorage check
+                const storedUser = localStorage.getItem('currentUser');
+                if (storedUser) {
+                    try {
+                        const user = JSON.parse(storedUser);
+                        if (user && user.id) {
+                            console.log('User found in localStorage:', user);
+                            loadUserRewards();
+                        } else {
+                            console.log('Invalid user data');
+                        }
+                    } catch (error) {
+                        console.error('Error parsing user data:', error);
+                    }
+                } else {
+                    console.log('No user found');
+                }
+            }
+        }
+
+        // Load and display user's rewards data
+        async function loadUserRewards() {
+            try {
+                // Get current user using the auth system
+                let user;
+                if (window.authUtils && window.authUtils.getCurrentUser) {
+                    user = window.authUtils.getCurrentUser();
+                } else {
+                    const storedUser = localStorage.getItem('currentUser');
+                    user = storedUser ? JSON.parse(storedUser) : null;
+                }
+
+                if (!user || !user.id) {
+                    console.error('No valid user found for rewards loading');
+                    return;
+                }
+
+                console.log('Loading rewards for user:', user.id);
+
+                // Initialize Supabase client
+                const supabase = window.supabaseClient || window.supabase.createClient(
+                    'https://brttakyichaccndpkotf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U'
+                );
+
+                // Get user's points summary from database
+                const { data: pointsSummary, error: summaryError } = await supabase
+                    .rpc('get_user_points_summary', { p_user_id: user.id });
+
+                if (summaryError) {
+                    console.error('Error fetching points summary:', summaryError);
+                    // Fallback to basic points query
+                    const { data: userData, error } = await supabase
+                        .from('users')
+                        .select('points')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (error) {
+                        console.error('Error fetching user points:', error);
+                        document.getElementById('totalPoints').textContent = '0';
+                        return;
+                    } else {
+                        const userPoints = userData.points || 0;
+                        document.getElementById('totalPoints').textContent = userPoints;
+                        updateProgressDisplay(userPoints, 0, 0, 0);
+                        updateRewardAvailability(userPoints);
+                        checkAchievements(userPoints, 0, 0, 0);
+                    }
+                } else {
+                    const summary = pointsSummary[0];
+                    const totalPoints = summary.total_points || 0;
+                    const earnedToday = summary.points_earned_today || 0;
+                    const earnedThisWeek = summary.points_earned_this_week || 0;
+                    const totalRewards = summary.total_rewards_redeemed || 0;
+
+                    document.getElementById('totalPoints').textContent = totalPoints;
+                    updateProgressDisplay(totalPoints, earnedToday, earnedThisWeek, totalRewards);
+                    updateRewardAvailability(totalPoints);
+                    checkAchievements(totalPoints, earnedToday, earnedThisWeek, totalRewards);
+
+                    console.log('Points summary loaded successfully:', {
+                        total: totalPoints,
+                        today: earnedToday,
+                        week: earnedThisWeek,
+                        rewards: totalRewards
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Error loading user rewards:', error);
+                document.getElementById('totalPoints').textContent = '0';
+                updateProgressDisplay(0, 0, 0, 0);
+                updateRewardAvailability(0);
+            }
+        }
+
+        // Load and display messages sent from database
+        async function loadMessagesSentProgress() {
+            try {
+                let user;
+                if (window.authUtils && window.authUtils.getCurrentUser) {
+                    user = window.authUtils.getCurrentUser();
+                } else {
+                    const storedUser = localStorage.getItem('currentUser');
+                    user = storedUser ? JSON.parse(storedUser) : null;
+                }
+
+                if (!user || !user.id) {
+                    console.error('No valid user found for messages loading');
+                    return;
+                }
+
+                const supabase = window.supabaseClient || window.supabase.createClient(
+                    'https://brttakyichaccndpkotf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U'
+                );
+
+                // Count messages sent by this user
+                const { data: messageData, error: messageError, count } = await supabase
+                    .from('messages')
+                    .select('id', { count: 'exact' })
+                    .eq('sender_id', user.id);
+
+                if (messageError) {
+                    console.error('Error fetching messages count:', messageError);
+                    return;
+                }
+
+                const messagesSent = count || 0;
+                const milestoneTarget = 10;
+                const percentageComplete = Math.min((messagesSent / milestoneTarget) * 100, 100);
+
+                // Update the display
+                document.getElementById('messagesSentCount').textContent = `${messagesSent}/${milestoneTarget}`;
+                document.getElementById('messagesSentFill').style.width = `${percentageComplete}%`;
+                
+                if (messagesSent >= milestoneTarget) {
+                    document.getElementById('messagesNextMilestone').textContent = `Milestone reached! You've sent ${messagesSent} messages (+25 points)`;
+                } else {
+                    const remaining = milestoneTarget - messagesSent;
+                    document.getElementById('messagesNextMilestone').textContent = `${remaining} more messages to milestone (+25 points)`;
+                }
+
+                console.log('Messages sent progress loaded:', {
+                    messagesSent,
+                    percentageComplete
+                });
+
+            } catch (error) {
+                console.error('Error loading messages progress:', error);
+            }
+        }
+
+        function setupRewardCardClicks() {
+            const rewardCards = document.querySelectorAll('.level-card.available, .level-card.premium, .level-card.exclusive');
+            
+            rewardCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const rewardName = this.querySelector('h3').textContent;
+                    const rewardValue = this.querySelector('p').textContent;
+                    const costElement = this.querySelector('.reward-cost');
+                    const cost = parseInt(costElement.textContent.replace(/\D/g, ''));
+                    
+                    handleRewardRedemption(rewardName, rewardValue, cost);
+                });
+            });
+        }
+
+        async function handleRewardRedemption(rewardName, rewardValue, cost) {
+            const currentPoints = parseInt(document.getElementById('totalPoints').textContent);
+            
+            if (currentPoints >= cost) {
+                if (confirm(`Redeem ${rewardName} ${rewardValue} for ${cost} points?`)) {
+                    try {
+                        // Get current user using the auth system
+                        let user;
+                        if (window.authUtils && window.authUtils.getCurrentUser) {
+                            user = window.authUtils.getCurrentUser();
+                        } else {
+                            const storedUser = localStorage.getItem('currentUser');
+                            user = storedUser ? JSON.parse(storedUser) : null;
+                        }
+
+                        if (!user || !user.id) {
+                            window.authUtils?.showNotification('Please log in to redeem rewards.', 'error');
+                            return;
+                        }
+
+                        // Initialize Supabase client
+                        const supabase = window.supabaseClient || window.supabase.createClient(
+                            'https://brttakyichaccndpkotf.supabase.co',
+                            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U'
+                        );
+
+                        // Use the redeem_reward function
+                        const { data: redeemResult, error } = await supabase
+                            .rpc('redeem_reward', {
+                                p_user_id: user.id,
+                                p_points_cost: cost,
+                                p_reward_name: rewardName,
+                                p_reward_value: rewardValue
+                            });
+
+                        if (error) {
+                            console.error('Error redeeming reward:', error);
+                            window.authUtils?.showNotification('Error redeeming reward. Please try again.', 'error');
+                            return;
+                        }
+
+                        const result = redeemResult[0];
+                        if (result.success) {
+                            // Update display with new balance from database
+                            document.getElementById('totalPoints').textContent = result.new_balance;
+                            
+                            // Show success message with voucher code
+                            const message = `✅ Successfully redeemed ${rewardName} ${rewardValue}!\n🎫 Voucher Code: ${result.voucher_code}\n💾 Expires in 30 days`;
+                            window.authUtils?.showNotification(message, 'success');
+                            
+                            // Update reward availability
+                            updateRewardAvailability(result.new_balance);
+                            
+                            // Reload user data to get updated summary
+                            await loadUserRewards();
+                            
+                            console.log('Reward redeemed:', {
+                                reward: rewardName,
+                                value: rewardValue,
+                                cost: cost,
+                                voucherCode: result.voucher_code,
+                                newBalance: result.new_balance
+                            });
+                        } else {
+                            window.authUtils?.showNotification(result.message, 'error');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error in reward redemption:', error);
+                        window.authUtils?.showNotification('Error redeeming reward. Please check your connection and try again.', 'error');
+                    }
+                }
+            } else {
+                window.authUtils?.showNotification(`You need ${cost - currentPoints} more points to redeem this reward.`, 'error');
+            }
+        }
+
+        function updateRewardAvailability(userPoints) {
+            const rewardCards = document.querySelectorAll('.level-card.available, .level-card.premium, .level-card.exclusive');
+            
+            rewardCards.forEach(card => {
+                const costElement = card.querySelector('.reward-cost');
+                const cost = parseInt(costElement.textContent.replace(/\D/g, ''));
+                
+                if (userPoints < cost) {
+                    card.style.opacity = '0.6';
+                    card.style.cursor = 'not-allowed';
+                } else {
+                    card.style.opacity = '1';
+                    card.style.cursor = 'pointer';
+                }
+            });
+        }
+
+        function updateProgressDisplay(totalPoints, earnedToday, earnedThisWeek, totalRewards) {
+            // Update progress bars based on actual database data
+            
+            // Update sessions progress (this would come from actual session data)
+            // For now, we'll calculate based on points earned
+            const sessionsAttended = Math.floor(earnedToday / 5); // Assuming 5 points per session
+            const sessionsTarget = 10;
+            const sessionsProgress = Math.min((sessionsAttended / sessionsTarget) * 100, 100);
+            
+            // Update messages progress (this would come from actual message data)
+            const messagesProgress = Math.min((earnedThisWeek / 10) * 100, 100); // Assuming some relation to points
+            
+            // Update resources progress
+            const resourcesProgress = Math.min((totalPoints / 5) * 20, 100); // Rough calculation
+            
+            // Update the progress bars
+            const progressBars = document.querySelectorAll('.progress-fill');
+            if (progressBars[0]) progressBars[0].style.width = sessionsProgress + '%';
+            if (progressBars[1]) progressBars[1].style.width = messagesProgress + '%';
+            if (progressBars[2]) progressBars[2].style.width = resourcesProgress + '%';
+            
+            // Update progress text
+            const progressCounts = document.querySelectorAll('.progress-count');
+            if (progressCounts[0]) progressCounts[0].textContent = `${sessionsAttended}/10`;
+            if (progressCounts[1]) progressCounts[1].textContent = `${Math.floor(earnedThisWeek / 3)}/10`;
+            if (progressCounts[2]) progressCounts[2].textContent = `${Math.floor(totalPoints / 15)}/5`;
+            
+            console.log('Progress display updated with database data:', {
+                totalPoints,
+                earnedToday,
+                earnedThisWeek,
+                totalRewards,
+                sessionsProgress,
+                messagesProgress,
+                resourcesProgress
+            });
+        }
+
+        // Function to award points (called from other pages)
+        async function awardPoints(points, activity) {
+            try {
+                // Get current user using the auth system
+                let user;
+                if (window.authUtils && window.authUtils.getCurrentUser) {
+                    user = window.authUtils.getCurrentUser();
+                } else {
+                    const storedUser = localStorage.getItem('currentUser');
+                    user = storedUser ? JSON.parse(storedUser) : null;
+                }
+
+                if (!user || !user.id) {
+                    console.log('No user logged in for points award');
+                    return false;
+                }
+
+                // Initialize Supabase client
+                const supabase = window.supabaseClient || window.supabase.createClient(
+                    'https://brttakyichaccndpkotf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U'
+                );
+
+                // Award points in database
+                const { data: newTotal, error } = await supabase
+                    .rpc('award_points', {
+                        p_user_id: user.id,
+                        p_points: points,
+                        p_activity_type: activity.replace(/\s+/g, '_'),
+                        p_description: `Earned ${points} points for ${activity}`
+                    });
+
+                if (!error && newTotal !== null) {
+                    // Update display with new total from database
+                    document.getElementById('totalPoints').textContent = newTotal;
+                    
+                    // Show notification
+                    window.authUtils?.showNotification(`🎉 +${points} points for ${activity}!`, 'success');
+                    
+                    // Update reward availability
+                    updateRewardAvailability(newTotal);
+                    
+                    // Reload full user data for updated summary
+                    await loadUserRewards();
+                    
+                    console.log('Points awarded successfully:', {
+                        points,
+                        activity,
+                        newTotal
+                    });
+                    
+                    return true;
+                } else {
+                    console.error('Error awarding points:', error);
+                    window.authUtils?.showNotification('Error awarding points. Please try again.', 'error');
+                    return false;
+                }
+                
+            } catch (error) {
+                console.error('Error awarding points:', error);
+                window.authUtils?.showNotification('Error awarding points. Please try again.', 'error');
+                return false;
+            }
+        }
+
+        function checkAchievements(points, earnedToday, earnedThisWeek, totalRewards) {
+            // Check and update achievement states based on database data
+            const achievementCards = document.querySelectorAll('.achievement-card');
+            
+            // Achievement 1: First Connection (unlocked if they have any points from buddy_found)
+            // This would be improved by checking the actual activity history
+            if (points >= 10) {
+                achievementCards[0]?.classList.remove('locked');
+                achievementCards[0]?.classList.add('unlocked');
+            }
+            
+            // Achievement 2: Weekly Warrior - 7 consecutive days (check points earned this week)
+            if (earnedThisWeek >= 35) { // Assuming 5 points per day minimum
+                achievementCards[1]?.classList.remove('locked');
+                achievementCards[1]?.classList.add('unlocked');
+            }
+            
+            // Achievement 3: Helper - 10 supportive messages (rough calculation from points)
+            if (points >= 30) { // Assuming some points come from messages
+                achievementCards[2]?.classList.remove('locked');
+                achievementCards[2]?.classList.add('unlocked');
+            }
+            
+            // Achievement 4: Resource Explorer - 5 resources
+            if (points >= 75) { // Rough calculation
+                achievementCards[3]?.classList.remove('locked');
+                achievementCards[3]?.classList.add('unlocked');
+            }
+            
+            // Achievement 5: Monthly Champion - 30 days of activities
+            if (points >= 150) {
+                achievementCards[4]?.classList.remove('locked');
+                achievementCards[4]?.classList.add('unlocked');
+            }
+            
+            // Achievement 6: Self-Care Specialist
+            if (points >= 200) {
+                achievementCards[5]?.classList.remove('locked');
+                achievementCards[5]?.classList.add('unlocked');
+            }
+            
+            console.log('Achievements updated based on database data:', {
+                points,
+                earnedToday,
+                earnedThisWeek,
+                totalRewards
+            });
+        }
+
+        // Expose function globally for other pages to use
+        window.awardPoints = awardPoints;
+    </script>
+</body>
+</html>

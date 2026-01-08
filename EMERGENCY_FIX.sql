@@ -649,6 +649,11 @@ CREATE TABLE IF NOT EXISTS public.event_requests (
 -- Enable RLS on event_requests
 ALTER TABLE public.event_requests ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view all event requests" ON public.event_requests;
+DROP POLICY IF EXISTS "Users can insert event requests" ON public.event_requests;
+DROP POLICY IF EXISTS "Users can update event requests" ON public.event_requests;
+
 -- Create RLS policies for event_requests
 CREATE POLICY "Users can view all event requests" 
 ON public.event_requests 
@@ -682,6 +687,11 @@ CREATE TABLE IF NOT EXISTS public.event_interest (
 -- Enable RLS on event_interest
 ALTER TABLE public.event_interest ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view all event interest" ON public.event_interest;
+DROP POLICY IF EXISTS "Users can insert event interest" ON public.event_interest;
+DROP POLICY IF EXISTS "Users can delete event interest" ON public.event_interest;
+
 -- Create RLS policies for event_interest
 CREATE POLICY "Users can view all event interest" 
 ON public.event_interest 
@@ -703,3 +713,168 @@ CREATE INDEX IF NOT EXISTS idx_event_interest_user_id ON public.event_interest(u
 CREATE INDEX IF NOT EXISTS idx_event_interest_event_id ON public.event_interest(event_id);
 
 SELECT 'Event requests table created successfully!' as status;
+
+-- =======================
+-- POINTS SYSTEM ADDITION
+-- =======================
+
+-- Add points column to users table
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS points INTEGER DEFAULT 0;
+
+-- Create user_points_history table to track point transactions
+CREATE TABLE IF NOT EXISTS public.user_points_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    points_awarded INTEGER NOT NULL,
+    activity_type VARCHAR(50) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for points history
+CREATE INDEX IF NOT EXISTS idx_user_points_history_user_id ON public.user_points_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_points_history_activity ON public.user_points_history(activity_type);
+CREATE INDEX IF NOT EXISTS idx_user_points_history_created ON public.user_points_history(created_at);
+
+-- Create user_rewards table to track redeemed rewards
+CREATE TABLE IF NOT EXISTS public.user_rewards (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    reward_name VARCHAR(100) NOT NULL,
+    reward_value VARCHAR(50) NOT NULL,
+    points_cost INTEGER NOT NULL,
+    voucher_code VARCHAR(100),
+    redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'used', 'expired'))
+);
+
+-- Create indexes for rewards
+CREATE INDEX IF NOT EXISTS idx_user_rewards_user_id ON public.user_rewards(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_rewards_status ON public.user_rewards(status);
+
+-- Function to award points to a user
+CREATE OR REPLACE FUNCTION public.award_points(
+    p_user_id UUID,
+    p_points INTEGER,
+    p_activity_type VARCHAR(50),
+    p_description TEXT DEFAULT NULL
+) RETURNS INTEGER AS $$
+DECLARE
+    new_total INTEGER;
+BEGIN
+    -- Update user's total points
+    UPDATE public.users 
+    SET points = COALESCE(points, 0) + p_points,
+        updated_at = NOW()
+    WHERE id = p_user_id
+    RETURNING points INTO new_total;
+    
+    -- Record the transaction in history
+    INSERT INTO public.user_points_history (user_id, points_awarded, activity_type, description)
+    VALUES (p_user_id, p_points, p_activity_type, p_description);
+    
+    RETURN new_total;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to deduct points for rewards
+CREATE OR REPLACE FUNCTION public.redeem_reward(
+    p_user_id UUID,
+    p_points_cost INTEGER,
+    p_reward_name VARCHAR(100),
+    p_reward_value VARCHAR(50)
+) RETURNS TABLE (
+    success BOOLEAN,
+    new_balance INTEGER,
+    voucher_code VARCHAR(100),
+    message TEXT
+) AS $$
+DECLARE
+    current_points INTEGER;
+    new_points INTEGER;
+    generated_voucher VARCHAR(100);
+BEGIN
+    -- Check current points
+    SELECT points INTO current_points FROM public.users WHERE id = p_user_id;
+    
+    IF current_points IS NULL THEN
+        RETURN QUERY SELECT FALSE, 0, ''::VARCHAR(100), 'User not found'::TEXT;
+        RETURN;
+    END IF;
+    
+    IF current_points < p_points_cost THEN
+        RETURN QUERY SELECT FALSE, current_points, ''::VARCHAR(100), 'Insufficient points'::TEXT;
+        RETURN;
+    END IF;
+    
+    -- Generate voucher code
+    generated_voucher := 'EASE-' || UPPER(substring(gen_random_uuid()::text from 1 for 8));
+    
+    -- Deduct points
+    new_points := current_points - p_points_cost;
+    UPDATE public.users 
+    SET points = new_points,
+        updated_at = NOW()
+    WHERE id = p_user_id;
+    
+    -- Record the deduction in history
+    INSERT INTO public.user_points_history (user_id, points_awarded, activity_type, description)
+    VALUES (p_user_id, -p_points_cost, 'reward_redemption', 'Redeemed: ' || p_reward_name);
+    
+    -- Record the reward
+    INSERT INTO public.user_rewards (user_id, reward_name, reward_value, points_cost, voucher_code, expires_at)
+    VALUES (p_user_id, p_reward_name, p_reward_value, p_points_cost, generated_voucher, NOW() + INTERVAL '30 days');
+    
+    RETURN QUERY SELECT TRUE, new_points, generated_voucher, 'Reward redeemed successfully'::TEXT;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get user's point summary
+CREATE OR REPLACE FUNCTION public.get_user_points_summary(p_user_id UUID)
+RETURNS TABLE (
+    total_points INTEGER,
+    points_earned_today INTEGER,
+    points_earned_this_week INTEGER,
+    total_rewards_redeemed INTEGER
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COALESCE(u.points, 0) as total_points,
+        COALESCE(SUM(CASE WHEN h.points_awarded > 0 AND h.created_at >= CURRENT_DATE THEN h.points_awarded ELSE 0 END), 0)::INTEGER as points_earned_today,
+        COALESCE(SUM(CASE WHEN h.points_awarded > 0 AND h.created_at >= CURRENT_DATE - INTERVAL '7 days' THEN h.points_awarded ELSE 0 END), 0)::INTEGER as points_earned_this_week,
+        COALESCE(COUNT(r.id), 0)::INTEGER as total_rewards_redeemed
+    FROM public.users u
+    LEFT JOIN public.user_points_history h ON u.id = h.user_id
+    LEFT JOIN public.user_rewards r ON u.id = r.user_id
+    WHERE u.id = p_user_id
+    GROUP BY u.points;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Update existing test users with initial points
+UPDATE public.users SET points = 50 WHERE email IN ('shenshouting10@gmail.com', 'melsonwang@gmail.com');
+
+-- Enable RLS on new tables
+ALTER TABLE public.user_points_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_rewards ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view their own points history" ON public.user_points_history;
+DROP POLICY IF EXISTS "Users can view their own rewards" ON public.user_rewards;
+DROP POLICY IF EXISTS "Users can insert their own rewards" ON public.user_rewards;
+DROP POLICY IF EXISTS "Enable all access for user_points_history" ON public.user_points_history;
+DROP POLICY IF EXISTS "Enable all access for user_rewards" ON public.user_rewards;
+
+-- Create RLS policies for points history (allow all access like other tables)
+CREATE POLICY "Enable all access for user_points_history"
+ON public.user_points_history FOR ALL
+USING (true);
+
+-- Create RLS policies for rewards (allow all access like other tables)
+CREATE POLICY "Enable all access for user_rewards"
+ON public.user_rewards FOR ALL
+USING (true);
+
+SELECT 'Points system added successfully!' as status;

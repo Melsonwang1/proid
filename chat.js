@@ -993,7 +993,35 @@ class BuddyChat {
                 return;
             }
 
-            window.authUtils?.showNotification('🎉 Great! You\'ve been matched with a new buddy!', 'success');
+            // Award points for finding a buddy
+            console.log('🎯 Awarding points for finding a buddy...');
+            try {
+                const { data: pointsResult, error: pointsError } = await this.supabase
+                    .rpc('award_points', {
+                        p_user_id: this.currentUser.id,
+                        p_points: 10,
+                        p_activity_type: 'buddy_found',
+                        p_description: 'Found a new buddy!'
+                    });
+
+                if (pointsError) {
+                    console.error('Error awarding points:', pointsError);
+                } else {
+                    console.log('✅ Points awarded! New total:', pointsResult);
+                    
+                    // If window.awardPoints is available (from rewards page), use it for notification
+                    if (window.awardPoints) {
+                        window.awardPoints(10, 'finding a buddy');
+                    } else {
+                        // Otherwise show a standard notification
+                        window.authUtils?.showNotification('🎉 Great! You\'ve been matched with a new buddy! (+10 points)', 'success');
+                    }
+                }
+            } catch (pointsError) {
+                console.error('Error with points system:', pointsError);
+                // Don't let points error prevent the main functionality
+                window.authUtils?.showNotification('🎉 Great! You\'ve been matched with a new buddy!', 'success');
+            }
             
             // Reload conversations to show the new buddy
             await this.loadConversations();
