@@ -243,41 +243,65 @@
             // Wait for auth system to be ready
             setTimeout(() => {
                 checkAuthenticationAndLoadRewards();
-                loadMessagesSentProgress();
             }, 200);
             setupRewardCardClicks();
         });
 
         // Check authentication before loading rewards
-        function checkAuthenticationAndLoadRewards() {
+        async function checkAuthenticationAndLoadRewards() {
             // Use the same auth check as other pages
             if (window.authUtils && window.authUtils.getCurrentUser) {
-                const user = window.authUtils.getCurrentUser();
+                const user = await window.authUtils.getCurrentUser();
                 if (user && user.id) {
                     console.log('User authenticated:', user);
                     loadUserRewards();
+                    loadMessagesSentProgress();
                 } else {
-                    console.log('User not authenticated');
+                    console.log('User not authenticated via authUtils, trying localStorage');
+                    // Try localStorage fallback with correct session key
+                    tryLocalStorageFallback();
                 }
             } else {
                 // Fallback to localStorage check
-                const storedUser = localStorage.getItem('currentUser');
-                if (storedUser) {
-                    try {
-                        const user = JSON.parse(storedUser);
-                        if (user && user.id) {
-                            console.log('User found in localStorage:', user);
-                            loadUserRewards();
-                        } else {
-                            console.log('Invalid user data');
-                        }
-                    } catch (error) {
-                        console.error('Error parsing user data:', error);
+                tryLocalStorageFallback();
+            }
+        }
+
+        // Fallback to check localStorage for user session
+        function tryLocalStorageFallback() {
+            // Try the session key first (ease_user_session)
+            const sessionStr = localStorage.getItem('ease_user_session');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session && session.user && session.user.id) {
+                        console.log('User found in session:', session.user);
+                        loadUserRewards();
+                        loadMessagesSentProgress();
+                        return;
                     }
-                } else {
-                    console.log('No user found');
+                } catch (error) {
+                    console.error('Error parsing session data:', error);
                 }
             }
+            
+            // Try the currentUser key as secondary fallback
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                try {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id) {
+                        console.log('User found in currentUser:', user);
+                        loadUserRewards();
+                        loadMessagesSentProgress();
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error parsing user data:', error);
+                }
+            }
+            
+            console.log('No user found in any storage');
         }
 
         // Load and display user's rewards data
@@ -286,8 +310,19 @@
                 // Get current user using the auth system
                 let user;
                 if (window.authUtils && window.authUtils.getCurrentUser) {
-                    user = window.authUtils.getCurrentUser();
-                } else {
+                    user = await window.authUtils.getCurrentUser();
+                }
+                
+                // Fallback to localStorage
+                if (!user || !user.id) {
+                    const sessionStr = localStorage.getItem('ease_user_session');
+                    if (sessionStr) {
+                        const session = JSON.parse(sessionStr);
+                        user = session?.user;
+                    }
+                }
+                
+                if (!user || !user.id) {
                     const storedUser = localStorage.getItem('currentUser');
                     user = storedUser ? JSON.parse(storedUser) : null;
                 }
@@ -362,8 +397,19 @@
             try {
                 let user;
                 if (window.authUtils && window.authUtils.getCurrentUser) {
-                    user = window.authUtils.getCurrentUser();
-                } else {
+                    user = await window.authUtils.getCurrentUser();
+                }
+                
+                // Fallback to localStorage with correct session key
+                if (!user || !user.id) {
+                    const sessionStr = localStorage.getItem('ease_user_session');
+                    if (sessionStr) {
+                        const session = JSON.parse(sessionStr);
+                        user = session?.user;
+                    }
+                }
+                
+                if (!user || !user.id) {
                     const storedUser = localStorage.getItem('currentUser');
                     user = storedUser ? JSON.parse(storedUser) : null;
                 }
@@ -373,45 +419,70 @@
                     return;
                 }
 
+                console.log('Loading messages for user:', user.id);
+
                 const supabase = window.supabaseClient || window.supabase.createClient(
                     'https://brttakyichaccndpkotf.supabase.co',
                     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJydHRha3lpY2hhY2NuZHBrb3RmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcyMzU5NzQsImV4cCI6MjA4MjgxMTk3NH0.M9DbGAQAK2SwFl4oXuAoNjvI8c72UfaBol4zT39X_5U'
                 );
 
-                // Count messages sent by this user
+                // Count messages sent by this user - using correct syntax
                 const { data: messageData, error: messageError, count } = await supabase
                     .from('messages')
-                    .select('id', { count: 'exact' })
+                    .select('*', { count: 'exact', head: true })
                     .eq('sender_id', user.id);
+
+                console.log('Messages query result:', {
+                    count,
+                    error: messageError,
+                    dataLength: messageData?.length
+                });
 
                 if (messageError) {
                     console.error('Error fetching messages count:', messageError);
-                    return;
-                }
-
-                const messagesSent = count || 0;
-                const milestoneTarget = 10;
-                const percentageComplete = Math.min((messagesSent / milestoneTarget) * 100, 100);
-
-                // Update the display
-                document.getElementById('messagesSentCount').textContent = `${messagesSent}/${milestoneTarget}`;
-                document.getElementById('messagesSentFill').style.width = `${percentageComplete}%`;
-                
-                if (messagesSent >= milestoneTarget) {
-                    document.getElementById('messagesNextMilestone').textContent = `Milestone reached! You've sent ${messagesSent} messages (+25 points)`;
+                    // Fallback: try to fetch all messages and count manually
+                    const { data: allMessages, error: fallbackError } = await supabase
+                        .from('messages')
+                        .select('id')
+                        .eq('sender_id', user.id);
+                    
+                    if (fallbackError) {
+                        console.error('Fallback query also failed:', fallbackError);
+                        return;
+                    }
+                    
+                    const messagesSent = allMessages?.length || 0;
+                    updateMessageProgressDisplay(messagesSent);
                 } else {
-                    const remaining = milestoneTarget - messagesSent;
-                    document.getElementById('messagesNextMilestone').textContent = `${remaining} more messages to milestone (+25 points)`;
+                    const messagesSent = count || 0;
+                    updateMessageProgressDisplay(messagesSent);
                 }
-
-                console.log('Messages sent progress loaded:', {
-                    messagesSent,
-                    percentageComplete
-                });
 
             } catch (error) {
                 console.error('Error loading messages progress:', error);
             }
+        }
+
+        // Helper function to update message progress display
+        function updateMessageProgressDisplay(messagesSent) {
+            const milestoneTarget = 10;
+            const percentageComplete = Math.min((messagesSent / milestoneTarget) * 100, 100);
+
+            // Update the display
+            document.getElementById('messagesSentCount').textContent = `${messagesSent}/${milestoneTarget}`;
+            document.getElementById('messagesSentFill').style.width = `${percentageComplete}%`;
+            
+            if (messagesSent >= milestoneTarget) {
+                document.getElementById('messagesNextMilestone').textContent = `Milestone reached! You've sent ${messagesSent} messages (+25 points)`;
+            } else {
+                const remaining = milestoneTarget - messagesSent;
+                document.getElementById('messagesNextMilestone').textContent = `${remaining} more messages to milestone (+25 points)`;
+            }
+
+            console.log('Messages progress updated:', {
+                messagesSent,
+                percentageComplete
+            });
         }
 
         function setupRewardCardClicks() {

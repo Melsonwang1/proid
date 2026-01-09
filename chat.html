@@ -113,6 +113,9 @@
                             <button class="chat-action-btn" title="Archive Chat">
                                 <i class="fa-solid fa-archive"></i>
                             </button>
+                            <button class="chat-action-btn concern-btn" id="concernBuddyBtn" title="Concerned About My Buddy?">
+                                <i class="fa-solid fa-exclamation-triangle"></i>
+                            </button>
                             <button class="chat-action-btn" title="More Options">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
@@ -252,6 +255,79 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelProfileBtn">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Profile & Find Buddies</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Concern Report Modal -->
+    <div class="modal-overlay" id="concernModalOverlay" style="display: none;">
+        <div class="modal-content concern-modal">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-heart-pulse"></i> Concerned About My Buddy?</h2>
+                <button class="modal-close" id="closeConcernModal">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            <div class="concern-info">
+                <p>If you're worried about your buddy's wellbeing or safety, please let us know. Your report will be handled confidentially by our support team.</p>
+                <p class="emergency-note"><i class="fa-solid fa-phone"></i> <strong>Emergency?</strong> If someone is in immediate danger, please call your local emergency services (911 in the US).</p>
+            </div>
+            <form class="concern-form" id="concernForm">
+                <div class="form-group">
+                    <label for="concernBuddyName">Buddy's Name</label>
+                    <input type="text" id="concernBuddyName" name="buddyName" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="concernType">Type of Concern</label>
+                    <select id="concernType" name="concernType" required>
+                        <option value="">Select concern type</option>
+                        <option value="self_harm">Expressing thoughts of self-harm</option>
+                        <option value="crisis">Appears to be in crisis</option>
+                        <option value="inappropriate">Inappropriate behavior</option>
+                        <option value="safety">General safety concern</option>
+                        <option value="wellbeing">Mental health deterioration</option>
+                        <option value="other">Other concern</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="concernUrgency">Urgency Level</label>
+                    <select id="concernUrgency" name="urgency" required>
+                        <option value="">Select urgency level</option>
+                        <option value="immediate">Immediate - Needs urgent attention</option>
+                        <option value="high">High - Within 24 hours</option>
+                        <option value="medium">Medium - Within a few days</option>
+                        <option value="low">Low - General observation</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="concernDescription">Describe Your Concern</label>
+                    <textarea id="concernDescription" name="description" rows="4" placeholder="Please provide details about what you've observed or what concerns you about your buddy..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="concernContext">Additional Context (Optional)</label>
+                    <textarea id="concernContext" name="context" rows="3" placeholder="Any additional information that might help our team understand the situation better..."></textarea>
+                </div>
+
+                <div class="anonymous-notice">
+                    <i class="fa-solid fa-shield-alt"></i>
+                    <span>This report will be submitted anonymously. Your buddy will not know who reported them.</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="concernFollowUp" checked>
+                        I'd like to receive a follow-up from the support team
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelConcernBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-concern">Submit Report</button>
                 </div>
             </form>
         </div>

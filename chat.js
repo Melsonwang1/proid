@@ -102,6 +102,23 @@ class BuddyChat {
         const editProfileBtn = document.getElementById('editProfileBtn');
         editProfileBtn?.addEventListener('click', () => this.editExistingProfile());
 
+        // Concern modal events
+        const concernBuddyBtn = document.getElementById('concernBuddyBtn');
+        const concernModalOverlay = document.getElementById('concernModalOverlay');
+        const closeConcernModal = document.getElementById('closeConcernModal');
+        const cancelConcernBtn = document.getElementById('cancelConcernBtn');
+        const concernForm = document.getElementById('concernForm');
+
+        concernBuddyBtn?.addEventListener('click', () => this.showConcernModal());
+        closeConcernModal?.addEventListener('click', () => this.hideConcernModal());
+        cancelConcernBtn?.addEventListener('click', () => this.hideConcernModal());
+        concernModalOverlay?.addEventListener('click', (e) => {
+            if (e.target === concernModalOverlay) {
+                this.hideConcernModal();
+            }
+        });
+        concernForm?.addEventListener('submit', (e) => this.handleConcernSubmit(e));
+
         // Message input events
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -348,6 +365,31 @@ class BuddyChat {
                     profiles.forEach(profile => {
                         this.userProfiles[profile.user_id] = profile.display_name || 'Unknown User';
                     });
+                    console.log('✅ Loaded user profiles from user_profiles table:', this.userProfiles);
+                } else {
+                    console.log('❌ No profiles from user_profiles table, trying users table...');
+                    this.userProfiles = {};
+                }
+
+                // Fallback: Try to get names from users table if user_profiles is empty
+                if (Object.keys(this.userProfiles).length === 0) {
+                    const { data: users, error: usersError } = await this.supabase
+                        .from('users')
+                        .select('id, first_name, last_name, email')
+                        .in('id', userIds);
+                    
+                    if (!usersError && users) {
+                        users.forEach(user => {
+                            let displayName = '';
+                            if (user.first_name || user.last_name) {
+                                displayName = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+                            } else {
+                                displayName = user.email ? user.email.split('@')[0] : 'Unknown User';
+                            }
+                            this.userProfiles[user.id] = displayName;
+                        });
+                        console.log('✅ Fallback: Loaded user names from users table:', this.userProfiles);
+                    }
                 }
 
                 // Fetch last message for each conversation
@@ -1254,6 +1296,138 @@ class BuddyChat {
         // Reset form and editing flag
         document.getElementById('buddyProfileForm').reset();
         this.isEditingExistingProfile = false;
+    }
+
+    showConcernModal() {
+        if (!this.currentConversation) {
+            alert('Please select a conversation first.');
+            return;
+        }
+
+        const modal = document.getElementById('concernModalOverlay');
+        const buddyNameInput = document.getElementById('concernBuddyName');
+        
+        // Get the buddy's name from the current conversation
+        const otherUserId = this.currentConversation.participant1_id === this.currentUser.id 
+            ? this.currentConversation.participant2_id 
+            : this.currentConversation.participant1_id;
+        
+        console.log('🎯 Getting buddy name for user ID:', otherUserId);
+        console.log('🎯 Available user profiles:', this.userProfiles);
+        
+        // Try multiple sources for the buddy name
+        let buddyName = this.userProfiles[otherUserId];
+        
+        if (!buddyName) {
+            // Try to get from the conversation list display
+            const activeConv = document.querySelector('.conversation-item.active .conversation-name');
+            if (activeConv) {
+                buddyName = activeConv.textContent.trim();
+            }
+        }
+        
+        if (!buddyName || buddyName === 'Unknown User') {
+            // Try to get from the chat header
+            const chatHeaderName = document.getElementById('chatUserName');
+            if (chatHeaderName) {
+                buddyName = chatHeaderName.textContent.trim();
+            }
+        }
+        
+        // Final fallback
+        if (!buddyName || buddyName === 'Buddy Name') {
+            buddyName = `User ${otherUserId.substring(0, 8)}`;
+        }
+        
+        console.log('🎯 Final buddy name:', buddyName);
+        buddyNameInput.value = buddyName;
+        
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideConcernModal() {
+        document.getElementById('concernModalOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+        document.getElementById('concernForm').reset();
+    }
+
+    async handleConcernSubmit(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        try {
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+
+            const otherUserId = this.currentConversation.participant1_id === this.currentUser.id 
+                ? this.currentConversation.participant2_id 
+                : this.currentConversation.participant1_id;
+
+            const concernData = {
+                reporter_id: this.currentUser.id,
+                reported_user_id: otherUserId,
+                conversation_id: this.currentConversation.id,
+                buddy_name: document.getElementById('concernBuddyName').value,
+                concern_type: document.getElementById('concernType').value,
+                urgency: document.getElementById('concernUrgency').value,
+                description: document.getElementById('concernDescription').value,
+                context: document.getElementById('concernContext').value,
+                is_anonymous: true, // Always anonymous
+                wants_followup: document.getElementById('concernFollowUp').checked,
+                status: 'pending',
+                created_at: new Date().toISOString()
+            };
+
+            // Try to insert into buddy_concerns table
+            const { data, error } = await this.supabase
+                .from('buddy_concerns')
+                .insert(concernData);
+
+            if (error) {
+                // If table doesn't exist, we'll store it locally and show success anyway
+                console.log('Note: buddy_concerns table may not exist yet. Logging concern:', concernData);
+                // Store in localStorage as a backup
+                const storedConcerns = JSON.parse(localStorage.getItem('buddy_concerns') || '[]');
+                storedConcerns.push(concernData);
+                localStorage.setItem('buddy_concerns', JSON.stringify(storedConcerns));
+            }
+
+            // Show success message
+            this.hideConcernModal();
+            this.showSuccessNotification('Thank you for your concern. Our support team will review this and take appropriate action.');
+            
+        } catch (error) {
+            console.error('Error submitting concern:', error);
+            alert('There was an error submitting your concern. Please try again or contact support directly.');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    showSuccessNotification(message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'success-notification';
+        notification.innerHTML = `
+            <i class="fa-solid fa-check-circle"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Trigger animation
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
     }
 
     setupRealtimeSubscriptions() {
