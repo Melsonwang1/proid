@@ -66,32 +66,65 @@
         </div>
     </section>
 
-    <!-- Therapist Specialties -->
-    <section class="services">
+    <!-- Therapist Search -->
+    <section class="contact">
         <div class="container">
-            <h2 class="section-title">Our Licensed Professionals</h2>
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">🧠</div>
-                    <h3>Clinical Psychologists</h3>
-                    <p>Doctoral-level professionals specializing in assessment, diagnosis, and therapy for mental health conditions.</p>
-                    <button class="btn btn-secondary">Find Psychologists</button>
+            <h2 class="section-title">Find Your Therapist</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h3>Get Matched Today</h3>
+                    <p>Use our search tool to find therapists who match your preferences for location, specialty, and more.</p>
+                    <div class="contact-methods">
+                        <div class="contact-method">
+                            <div class="method-icon">📞</div>
+                            <div class="method-info">
+                                <span class="method-label">Call for Help</span>
+                                <span class="method-value">National Mindline: 1771</span>
+                            </div>
+                        </div>
+                        <div class="contact-method">
+                            <div class="method-icon">⏰</div>
+                            <div class="method-info">
+                                <span class="method-label">Response Time</span>
+                                <span class="method-value">24/7</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="service-card">
-                    <div class="service-icon">💊</div>
-                    <h3>Psychiatrists</h3>
-                    <p>Medical doctors who can provide therapy and prescribe medication for mental health treatment.</p>
-                    <button class="btn btn-secondary">Find Psychiatrists</button>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🤝</div>
-                    <h3>Licensed Counselors</h3>
-                    <p>Master's-level therapists providing individual, couples, and family counseling services.</p>
-                    <button class="btn btn-secondary">Find Counselors</button>
-                </div>
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label for="location">Preferred Location</label>
+                        <input type="text" id="location" name="location" placeholder="Residential town, neighbourhoods or zip code">
+                    </div>
+                    <div class="form-group">
+                        <label for="specialty">Issue/Specialty</label>
+                        <select id="specialty" name="specialty">
+                            <option value="">Select Primary Concern</option>
+                            <option value="anxiety">Anxiety</option>
+                            <option value="depression">Depression</option>
+                            <option value="trauma">Trauma/PTSD</option>
+                            <option value="relationships">Relationship Issues</option>
+                            <option value="addiction">Addiction</option>
+                            <option value="grief">Grief/Loss</option>
+                            <option value="eating">Eating Disorders</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="session-type">Preferred Session Type</label>
+                        <select id="session-type" name="session-type">
+                            <option value="">No Preference</option>
+                            <option value="in-person">In-Person</option>
+                            <option value="video">Video/Teletherapy</option>
+                            <option value="phone">Phone</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Find Therapists</button>
+                </form>
             </div>
         </div>
     </section>
+
 
     <!-- How to Choose -->
     <section class="about">
@@ -139,108 +172,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Insurance and Payment -->
-    <section class="resources">
-        <div class="container">
-            <h2 class="section-title">Insurance & Payment Options</h2>
-            <div class="resources-grid">
-                <div class="resource-category">
-                    <h3>🏥 Insurance Accepted</h3>
-                    <div class="resource-links">
-                        <a href="#" class="resource-link">Blue Cross Blue Shield</a>
-                        <a href="#" class="resource-link">Aetna</a>
-                        <a href="#" class="resource-link">Cigna</a>
-                        <a href="#" class="resource-link">UnitedHealthcare</a>
-                        <a href="#" class="resource-link">Medicare & Medicaid</a>
-                    </div>
-                </div>
-                <div class="resource-category">
-                    <h3>💳 Payment Options</h3>
-                    <div class="resource-links">
-                        <a href="#" class="resource-link">Insurance Co-pays</a>
-                        <a href="#" class="resource-link">Sliding Scale Fees</a>
-                        <a href="#" class="resource-link">Employee Assistance Programs</a>
-                        <a href="#" class="resource-link">Student Discounts</a>
-                        <a href="#" class="resource-link">Payment Plans Available</a>
-                    </div>
-                </div>
-                <div class="resource-category">
-                    <h3>📱 Session Types</h3>
-                    <div class="resource-links">
-                        <a href="#" class="resource-link">In-Person Sessions</a>
-                        <a href="#" class="resource-link">Teletherapy (Video)</a>
-                        <a href="#" class="resource-link">Phone Sessions</a>
-                        <a href="#" class="resource-link">Text-Based Therapy</a>
-                        <a href="#" class="resource-link">Group Therapy</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Therapist Search -->
-    <section class="contact">
-        <div class="container">
-            <h2 class="section-title">Find Your Therapist</h2>
-            <div class="contact-content">
-                <div class="contact-info">
-                    <h3>Get Matched Today</h3>
-                    <p>Use our search tool to find therapists who match your preferences for location, specialty, insurance, and more.</p>
-                    <div class="contact-methods">
-                        <div class="contact-method">
-                            <div class="method-icon">📞</div>
-                            <div class="method-info">
-                                <span class="method-label">Call for Help</span>
-                                <span class="method-value">(555) 123-EASE</span>
-                            </div>
-                        </div>
-                        <div class="contact-method">
-                            <div class="method-icon">⏰</div>
-                            <div class="method-info">
-                                <span class="method-label">Response Time</span>
-                                <span class="method-value">Within 24 hours</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <form class="contact-form">
-                    <div class="form-group">
-                        <label for="location">Preferred Location</label>
-                        <input type="text" id="location" name="location" placeholder="City, State or Zip Code">
-                    </div>
-                    <div class="form-group">
-                        <label for="specialty">Issue/Specialty</label>
-                        <select id="specialty" name="specialty">
-                            <option value="">Select Primary Concern</option>
-                            <option value="anxiety">Anxiety</option>
-                            <option value="depression">Depression</option>
-                            <option value="trauma">Trauma/PTSD</option>
-                            <option value="relationships">Relationship Issues</option>
-                            <option value="addiction">Addiction</option>
-                            <option value="grief">Grief/Loss</option>
-                            <option value="eating">Eating Disorders</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="insurance">Insurance Provider</label>
-                        <input type="text" id="insurance" name="insurance" placeholder="e.g., Blue Cross, Aetna, Self-Pay">
-                    </div>
-                    <div class="form-group">
-                        <label for="session-type">Preferred Session Type</label>
-                        <select id="session-type" name="session-type">
-                            <option value="">No Preference</option>
-                            <option value="in-person">In-Person</option>
-                            <option value="video">Video/Teletherapy</option>
-                            <option value="phone">Phone</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Find Therapists</button>
-                </form>
             </div>
         </div>
     </section>
