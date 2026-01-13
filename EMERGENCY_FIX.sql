@@ -470,10 +470,10 @@ INSERT INTO public.events (id, title, description, event_type, icon, duration_mi
 ),
 (
     '55555555-5555-5555-5555-555555555555'::UUID,
-    'Educational Seminar',
-    'Learn about mental health topics from expert speakers and facilitators.',
-    'seminar',
-    '📚',
+    'Board Games Session',
+    'Connect with others through fun board games and card games in a relaxed, social environment.',
+    'social_games',
+    '🎲',
     45,
     50,
     'voting'
@@ -487,6 +487,16 @@ INSERT INTO public.events (id, title, description, event_type, icon, duration_mi
     120,
     25,
     'voting'
+),
+(
+    '77777777-7777-7777-7777-777777777777'::UUID,
+    'Mental Health Film Screening',
+    'Watch and discuss mental health-themed films together in a supportive, relaxed environment.',
+    'movie_screening',
+    '🎬',
+    120,
+    40,
+    'voting'
 )
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
@@ -494,38 +504,53 @@ ON CONFLICT (id) DO UPDATE SET
     status = EXCLUDED.status,
     updated_at = NOW();
 
--- Step 16: Insert sample timeslots for events (with conflict handling)
+-- Step 16: Insert comprehensive timeslots for all events (with conflict handling)
+-- Delete existing timeslots first to avoid conflicts
+DELETE FROM public.event_timeslots;
+
+-- Insert timeslots with different times for weekdays vs weekends
+-- Weekdays (Mon-Fri): 8pm-10pm Singapore time only
+-- Weekends (Sat-Sun): 8am-10pm Singapore time
+-- Using AT TIME ZONE to ensure correct Singapore timezone handling
 INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
 SELECT 
     e.id,
-    CURRENT_DATE + INTERVAL '1 day' + time_slot::TIME,
-    CASE EXTRACT(DOW FROM CURRENT_DATE + INTERVAL '1 day')
-        WHEN 0 THEN 'Sunday'
-        WHEN 1 THEN 'Monday' 
-        WHEN 2 THEN 'Tuesday'
-        WHEN 3 THEN 'Wednesday'
-        WHEN 4 THEN 'Thursday'
-        WHEN 5 THEN 'Friday'
-        WHEN 6 THEN 'Saturday'
+    ((CURRENT_DATE + day_offset.days)::DATE + time_slot::TIME) AT TIME ZONE 'Asia/Singapore',
+    CASE EXTRACT(DOW FROM CURRENT_DATE + day_offset.days)
+        WHEN 0 THEN 'Sunday' WHEN 1 THEN 'Monday' WHEN 2 THEN 'Tuesday' WHEN 3 THEN 'Wednesday'
+        WHEN 4 THEN 'Thursday' WHEN 5 THEN 'Friday' WHEN 6 THEN 'Saturday'
     END,
     time_slot
 FROM public.events e
 CROSS JOIN (
-    VALUES ('09:00'), ('14:00'), ('18:00')
-) AS times(time_slot)
-ON CONFLICT (event_id, proposed_datetime) DO NOTHING;
-
--- Add weekend slots
-INSERT INTO public.event_timeslots (event_id, proposed_datetime, day_of_week, time_slot) 
-SELECT 
-    e.id,
-    CURRENT_DATE + INTERVAL '5 days' + time_slot::TIME, -- Saturday
-    'Saturday',
-    time_slot
-FROM public.events e
+    VALUES 
+        (INTERVAL '1 day'),   -- Tomorrow
+        (INTERVAL '2 days'),  -- Day after tomorrow  
+        (INTERVAL '3 days'),  -- 3 days from now
+        (INTERVAL '4 days'),  -- 4 days from now
+        (INTERVAL '5 days'),  -- 5 days from now
+        (INTERVAL '6 days'),  -- 6 days from now
+        (INTERVAL '7 days'),  -- 7 days from now
+        (INTERVAL '8 days'),  -- Next week
+        (INTERVAL '9 days'),  -- Next week
+        (INTERVAL '10 days')  -- Next week
+) AS day_offset(days)
 CROSS JOIN (
-    VALUES ('10:00'), ('15:00')
+    -- Weekend times (8am-10pm): 08:00 to 22:00
+    VALUES 
+        ('08:00'), ('09:00'), ('10:00'), ('11:00'), ('12:00'),
+        ('13:00'), ('14:00'), ('15:00'), ('16:00'), ('17:00'),
+        ('18:00'), ('19:00'), ('20:00'), ('21:00'), ('22:00')
 ) AS times(time_slot)
+WHERE e.status = 'voting'
+AND (
+    -- Weekend (Saturday=6, Sunday=0): allow all times 8am-10pm
+    (EXTRACT(DOW FROM CURRENT_DATE + day_offset.days) IN (0, 6))
+    OR
+    -- Weekday (Mon-Fri): only allow evening times 8pm-10pm
+    (EXTRACT(DOW FROM CURRENT_DATE + day_offset.days) IN (1, 2, 3, 4, 5) 
+     AND time_slot IN ('20:00', '21:00', '22:00'))
+)
 ON CONFLICT (event_id, proposed_datetime) DO NOTHING;
 
 -- Step 17: Create voting functions

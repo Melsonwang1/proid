@@ -134,6 +134,78 @@
             color: var(--primary-color);
         }
 
+        /* Timeslots display styles */
+        .event-timeslots-container {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8fafc, #f0f9ff);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .timeslots-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .timeslots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .timeslot-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.8rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .timeslot-option:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        }
+
+        .timeslot-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, var(--primary-color), #4f46e5);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .timeslot-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .timeslot-date {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #374151;
+        }
+
+        .timeslot-time {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
         .loading-placeholder {
             text-align: center;
             padding: 3rem;
@@ -377,7 +449,7 @@
                     Join what interests you, when you're ready—simple, accessible, and completely free.
                 </p>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary">Browse Events</button>
+                    <a href="voting.html" class="btn btn-primary">Browse Events</a>
                     <button class="btn btn-secondary">View Calendar</button>
                 </div>
             </div>
@@ -392,14 +464,6 @@
             <div class="events-info">
                 <p>Browse our included wellness events and activities. All events are free and open to all members!</p>
             </div>
-
-            <div class="request-events">
-                <h3>Don't see what you're looking for?</h3>
-                <p>Request new events or activities that you'd like to see added to our program!</p>
-                <button class="btn btn-primary" onclick="openEventRequestForm()">
-                    <i class="fa-solid fa-plus"></i> Request New Event
-                </button>
-            </div>
             
             <div class="services-grid" id="eventsContainer">
                 <!-- Events will be loaded dynamically -->
@@ -407,6 +471,14 @@
                     <i class="fa-solid fa-spinner fa-spin"></i>
                     <p>Loading available events...</p>
                 </div>
+            </div>
+
+            <div class="request-events">
+                <h3>Don't see what you're looking for?</h3>
+                <p>Request new events or activities that you'd like to see added to our program!</p>
+                <button class="btn btn-primary" onclick="openEventRequestForm()">
+                    <i class="fa-solid fa-plus"></i> Request New Event
+                </button>
             </div>
         </div>
     </section>
@@ -546,22 +618,35 @@
                     </div>
                 `;
 
-                // Fetch all available events including those in voting
+                // First, fetch events
                 const { data: events, error: eventsError } = await supabaseClient
                     .from('events')
-                    .select(`
-                        *,
-                        event_timeslots (
-                            id,
-                            proposed_datetime,
-                            day_of_week,
-                            time_slot
-                        )
-                    `)
+                    .select('*')
                     .in('status', ['active', 'scheduled', 'upcoming', 'voting', 'pending'])
                     .order('created_at', { ascending: false });
 
                 if (eventsError) throw eventsError;
+
+                // Then, fetch timeslots for each event with appropriate limits
+                const eventsWithTimeslots = await Promise.all(events.map(async (event) => {
+                    // Determine limit based on event title (matches voting.html max vote limits)
+                    const isHighLimitEvent = ['Mindfulness Meditation', 'Art Therapy Session', 'Nature Therapy Walk', 'Mental Health Film Screening'].includes(event.title);
+                    const limit = isHighLimitEvent ? 5 : 4;
+
+                    const { data: timeslots, error: timeslotsError } = await supabaseClient
+                        .from('event_timeslots')
+                        .select('id, proposed_datetime, day_of_week, time_slot')
+                        .eq('event_id', event.id)
+                        .order('proposed_datetime', { ascending: true })
+                        .limit(limit);
+
+                    if (timeslotsError) {
+                        console.error('Error loading timeslots for event:', event.title, timeslotsError);
+                        return { ...event, event_timeslots: [] };
+                    }
+
+                    return { ...event, event_timeslots: timeslots || [] };
+                }));
 
                 // Fetch user registrations if authenticated
                 if (currentUser && currentUser.id) {
@@ -578,7 +663,7 @@
                     }
                 }
 
-                renderScheduledEvents(events || []);
+                renderScheduledEvents(eventsWithTimeslots);
 
             } catch (error) {
                 console.error('Error loading available events:', error);
@@ -615,25 +700,45 @@
                 let dateTimeContent = '';
                 let statusText = 'Available';
                 
+                // Determine max slots based on event title (matches voting.html max vote limits)
+                const isHighLimitEvent = ['Mindfulness Meditation', 'Art Therapy Session', 'Nature Therapy Walk', 'Mental Health Film Screening'].includes(event.title);
+                const maxSlots = isHighLimitEvent ? 5 : 4;
+                
                 if (hasTimeslot) {
-                    const timeslot = event.event_timeslots[0];
-                    const eventDate = new Date(timeslot.proposed_datetime);
-                    const dateString = eventDate.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    });
-                    const timeString = eventDate.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
+                    // Display all available timeslots (up to the max)
+                    const timeslotsHTML = event.event_timeslots.slice(0, maxSlots).map((timeslot, index) => {
+                        const eventDate = new Date(timeslot.proposed_datetime);
+                        const dateString = eventDate.toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                        });
+                        const timeString = eventDate.toLocaleTimeString('en-US', { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                        });
+                        
+                        return `
+                            <div class="timeslot-option" data-timeslot-id="${timeslot.id}">
+                                <span class="timeslot-number">${index + 1}</span>
+                                <div class="timeslot-details">
+                                    <span class="timeslot-date">${dateString}</span>
+                                    <span class="timeslot-time">${timeString}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
                     
                     dateTimeContent = `
-                        <div class="event-datetime">
-                            <div class="event-date">${dateString}</div>
-                            <div class="event-time">${timeString}</div>
+                        <div class="event-timeslots-container">
+                            <div class="timeslots-header">
+                                <i class="fa-solid fa-calendar-days"></i>
+                                <span>Available Times (${event.event_timeslots.length} of ${maxSlots})</span>
+                            </div>
+                            <div class="timeslots-grid">
+                                ${timeslotsHTML}
+                            </div>
                         </div>
                     `;
                     statusText = 'Scheduled';

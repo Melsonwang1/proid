@@ -62,6 +62,37 @@
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .no-slots {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .vote-counter {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .vote-counter.max-reached {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .timeslot-voting.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .timeslot-voting.disabled .vote-btn {
+            cursor: not-allowed;
+            opacity: 0.5;
         }
 
         .timeslot-voting {
@@ -267,7 +298,8 @@
         <div class="container">
             <h2 class="section-title">Vote for Your Preferred Times!</h2>
             <div class="voting-instructions">
-                <p>🗳️ Vote for events you're interested in and select your preferred time slots. The most popular times will be scheduled!</p>
+                <p>🗳️ Vote for events you're interested in and select multiple preferred time slots. The most popular times will be scheduled!</p>
+                <p><small>💡 You can vote for multiple time slots for each event to increase your chances of attending!</small></p>
             </div>
             
             <div class="services-grid" id="eventsContainer">
@@ -348,7 +380,7 @@
                     </div>
                 `;
 
-                // Fetch events with timeslots and votes
+                // Fetch events with timeslots and votes - only 'voting' status events have timeslots
                 const { data: events, error: eventsError } = await supabaseClient
                     .from('events')
                     .select(`
@@ -360,9 +392,14 @@
                             time_slot
                         )
                     `)
-                    .eq('status', 'proposed');
+                    .eq('status', 'voting');
 
                 if (eventsError) throw eventsError;
+                
+                console.log('Loaded events:', events?.length || 0);
+                events?.forEach(e => {
+                    console.log(`Event: ${e.title}, Timeslots: ${e.event_timeslots?.length || 0}`);
+                });
 
                 // Fetch user votes if authenticated
                 if (currentUser && currentUser.id) {
@@ -437,35 +474,63 @@
                     v.event_id === event.id && v.vote_type === 'event_interest'
                 ).length;
 
-                const timeslotsHTML = event.event_timeslots?.map(slot => {
-                    const userSlotVote = userVotes.get(`${event.id}_${slot.id}_timeslot_preference`);
-                    const hasVotedForSlot = !!userSlotVote;
-                    const slotVoteCount = voteCountMap.get(slot.id) || 0;
-                    
-                    const slotDate = new Date(slot.proposed_datetime);
-                    const timeString = slotDate.toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit',
-                        hour12: true 
-                    });
+                // Determine max votes allowed for this event
+                const isHighVoteEvent = ['Mindfulness Meditation', 'Art Therapy Session', 'Nature Therapy Walk', 'Mental Health Film Screening'].includes(event.title);
+                const maxVotes = isHighVoteEvent ? 5 : 4;
+                
+                // Count how many timeslots user has voted for in this event
+                const userTimeslotVotes = Array.from(userVotes.values()).filter(v => 
+                    v.event_id === event.id && v.vote_type === 'timeslot_preference'
+                ).length;
+                
+                const hasReachedMaxVotes = userTimeslotVotes >= maxVotes;
 
-                    return `
-                        <div class="timeslot-voting ${hasVotedForSlot ? 'voted' : ''}" data-slot-id="${slot.id}">
-                            <div class="timeslot-info">
-                                <div class="timeslot-time">${timeString}</div>
-                                <div class="timeslot-day">${slot.day_of_week}</div>
-                            </div>
-                            <div class="vote-controls">
-                                <div class="vote-count">${slotVoteCount}</div>
-                                <button class="vote-btn ${hasVotedForSlot ? 'voted' : ''}" 
-                                        onclick="voteForTimeslot('${event.id}', '${slot.id}')"
-                                        ${!currentUser || !currentUser.id ? 'disabled title="Please login to vote"' : ''}>
-                                    <i class="fa-solid fa-heart"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }).join('') || '<p>No time slots available</p>';
+                const timeslotsHTML = event.event_timeslots?.length > 0 
+                    ? event.event_timeslots
+                        .sort((a, b) => new Date(a.proposed_datetime) - new Date(b.proposed_datetime))
+                        .map(slot => {
+                            const userSlotVote = userVotes.get(`${event.id}_${slot.id}_timeslot_preference`);
+                            const hasVotedForSlot = !!userSlotVote;
+                            const slotVoteCount = voteCountMap.get(slot.id) || 0;
+                            
+                            // Disable button if max votes reached and user hasn't voted for this slot
+                            const isDisabled = !currentUser || !currentUser.id || (hasReachedMaxVotes && !hasVotedForSlot);
+                            const disabledReason = !currentUser || !currentUser.id 
+                                ? 'Please login to vote' 
+                                : (hasReachedMaxVotes && !hasVotedForSlot) 
+                                    ? `Maximum ${maxVotes} votes reached for this event` 
+                                    : '';
+                            
+                            const slotDate = new Date(slot.proposed_datetime);
+                            const dateString = slotDate.toLocaleDateString('en-US', { 
+                                weekday: 'short',
+                                month: 'short', 
+                                day: 'numeric' 
+                            });
+                            const timeString = slotDate.toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: true 
+                            });
+
+                            return `
+                                <div class="timeslot-voting ${hasVotedForSlot ? 'voted' : ''} ${isDisabled && !hasVotedForSlot ? 'disabled' : ''}" data-slot-id="${slot.id}">
+                                    <div class="timeslot-info">
+                                        <div class="timeslot-time">${timeString}</div>
+                                        <div class="timeslot-day">${dateString}</div>
+                                    </div>
+                                    <div class="vote-controls">
+                                        <div class="vote-count">${slotVoteCount}</div>
+                                        <button class="vote-btn ${hasVotedForSlot ? 'voted' : ''}" 
+                                                onclick="voteForTimeslot('${event.id}', '${slot.id}')"
+                                                ${isDisabled ? `disabled title="${disabledReason}"` : ''}>
+                                            <i class="fa-solid fa-heart"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') 
+                    : '<p class="no-slots">No time slots available yet. Check back soon!</p>';
 
                 return `
                     <div class="event-card" data-event-id="${event.id}">
@@ -480,7 +545,8 @@
                         <p class="event-description">${event.description}</p>
                         
                         <div class="timeslots-container">
-                            <h4>Vote for your preferred time slots:</h4>
+                            <h4>Vote for your preferred time slots (max ${maxVotes}):</h4>
+                            <p class="vote-counter ${hasReachedMaxVotes ? 'max-reached' : ''}">${userTimeslotVotes}/${maxVotes} votes used</p>
                             ${timeslotsHTML}
                         </div>
                         
@@ -570,23 +636,7 @@
                     if (error) throw error;
                     userVotes.delete(voteKey);
                 } else {
-                    // First, remove any existing timeslot votes for this event
-                    const existingEventVotes = Array.from(userVotes.entries()).filter(([key, vote]) => 
-                        vote.event_id === eventId && vote.vote_type === 'timeslot_preference'
-                    );
-
-                    // Delete existing timeslot votes for this event
-                    for (const [key, vote] of existingEventVotes) {
-                        const { error } = await supabaseClient
-                            .from('event_votes')
-                            .delete()
-                            .eq('id', vote.id);
-
-                        if (error) throw error;
-                        userVotes.delete(key);
-                    }
-
-                    // Add new vote
+                    // Add new vote (allow multiple timeslots per event)
                     const { data, error } = await supabaseClient
                         .from('event_votes')
                         .insert({
