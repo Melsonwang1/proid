@@ -67,6 +67,27 @@ async function signupUser(userData) {
 
         console.log('User created successfully:', newUser.id);
 
+        // Create user profile with display name
+        const displayName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || newUser.email;
+        const { error: profileError } = await supabaseClient
+            .from('user_profiles')
+            .insert([
+                {
+                    user_id: newUser.id,
+                    display_name: displayName,
+                    is_active: true,
+                    is_available_as_buddy: true,
+                    is_seeking_buddy: false
+                }
+            ]);
+
+        if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Continue anyway - profile can be created later
+        } else {
+            console.log('User profile created successfully');
+        }
+
         // Create session
         const user = {
             id: newUser.id,
