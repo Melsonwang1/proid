@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Viewer - EASE</title>
+    <meta name="description" content="View course content">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dark-mode.css">
+    <script src="dark-mode.js"></script>
+    <style>
+        .viewer-container {
+            padding-top: 80px;
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+
+        .viewer-header {
+            background: var(--bg-primary);
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 70px;
+            z-index: 100;
+        }
+
+        .viewer-header .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .viewer-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .viewer-title h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .pdf-wrapper {
+            padding: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pdf-container {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .pdf-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pdf-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+
+        .pdf-info i {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .pdf-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pdf-actions button,
+        .pdf-actions a {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s ease;
+        }
+
+        .pdf-actions button:hover,
+        .pdf-actions a:hover {
+            background: var(--primary-dark);
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: calc(100vh - 280px);
+            min-height: 600px;
+            border: none;
+        }
+
+        .course-not-found {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .course-not-found i {
+            font-size: 4rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .course-not-found h2 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .course-not-found p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .viewer-title h1 {
+                font-size: 1.2rem;
+            }
+
+            .pdf-wrapper {
+                padding: 15px;
+            }
+
+            .pdf-viewer {
+                height: calc(100vh - 320px);
+                min-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                <span class="logo-text">EASE</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="peer-support.html" class="nav-link">Peer Support</a>
+                <a href="book-sessions.html" class="nav-link">Events</a>
+                <a href="resources.html" class="nav-link active">Resources</a>
+                <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
+                <a href="chat.html" class="nav-link" id="chatLink" style="display: none;">Chat</a>
+                <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="rewards.html">Rewards</a>
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+                <i class="fa-solid fa-moon"></i>
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Viewer Container -->
+    <div class="viewer-container">
+        <div class="viewer-header">
+            <div class="container">
+                <div class="viewer-title">
+                    <span id="courseIcon">🔥</span>
+                    <h1 id="courseTitle">Understanding Burnout</h1>
+                </div>
+                <a href="library.html" class="back-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Library
+                </a>
+            </div>
+        </div>
+
+        <div class="pdf-wrapper">
+            <div class="pdf-container" id="pdfContainer">
+                <div class="pdf-toolbar">
+                    <div class="pdf-info">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span id="pdfFileName">Understanding Burnout.pdf</span>
+                    </div>
+                    <div class="pdf-actions">
+                        <a href="" id="downloadBtn" download>
+                            <i class="fa-solid fa-download"></i> Download
+                        </a>
+                        <a href="" id="openNewTab" target="_blank">
+                            <i class="fa-solid fa-external-link-alt"></i> Open in New Tab
+                        </a>
+                    </div>
+                </div>
+                <iframe id="pdfViewer" class="pdf-viewer" src=""></iframe>
+            </div>
+
+            <div class="course-not-found" id="notFound" style="display: none;">
+                <i class="fa-solid fa-file-circle-question"></i>
+                <h2>Course Content Not Available</h2>
+                <p>The content for this course is not available yet. Please check back later.</p>
+                <a href="library.html" class="btn btn-primary">Back to Library</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                    <span class="logo-text">EASE</span>
+                </div>
+                <p class="footer-tagline">Calm support at your own pace</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EASE. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Course data mapping
+        const courses = {
+            'burnout': {
+                title: 'Understanding Burnout',
+                icon: '🔥',
+                pdf: 'understanding-burnout.pdf'
+            },
+            'anxiety': {
+                title: 'Understanding Anxiety Disorders',
+                icon: '😰',
+                pdf: null // PDF not available yet
+            },
+            'depression': {
+                title: 'Depression: Signs and Support',
+                icon: '💙',
+                pdf: null
+            },
+            'stress': {
+                title: 'Stress Management Strategies',
+                icon: '🌿',
+                pdf: null
+            },
+            'resilience': {
+                title: 'Building Resilience',
+                icon: '💪',
+                pdf: null
+            },
+            'relationships': {
+                title: 'Healthy Relationships Guide',
+                icon: '❤️',
+                pdf: null
+            }
+        };
+
+        // Get course from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('course');
+
+        // Load course content
+        function loadCourse(id) {
+            const course = courses[id];
+            
+            if (!course) {
+                showNotFound();
+                return;
+            }
+
+            document.getElementById('courseTitle').textContent = course.title;
+            document.getElementById('courseIcon').textContent = course.icon;
+            document.title = `${course.title} - EASE`;
+
+            if (course.pdf) {
+                const pdfPath = encodeURIComponent(course.pdf);
+                document.getElementById('pdfViewer').src = course.pdf;
+                document.getElementById('downloadBtn').href = course.pdf;
+                document.getElementById('openNewTab').href = course.pdf;
+                document.getElementById('pdfFileName').textContent = course.pdf;
+                document.getElementById('pdfContainer').style.display = 'block';
+                document.getElementById('notFound').style.display = 'none';
+            } else {
+                showNotFound();
+            }
+        }
+
+        function showNotFound() {
+            document.getElementById('pdfContainer').style.display = 'none';
+            document.getElementById('notFound').style.display = 'block';
+        }
+
+        // Initialize
+        if (courseId) {
+            loadCourse(courseId);
+        } else {
+            showNotFound();
+        }
+    </script>
+</body>
+</html>

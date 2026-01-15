@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library - EASE</title>
+    <meta name="description" content="Browse our educational courses on mental health and wellness.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="dark-mode.css">
+    <script src="dark-mode.js"></script>
+    <style>
+        .library-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 100px 0 60px;
+            text-align: center;
+            color: white;
+        }
+
+        .library-hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .library-hero p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+            color: white;
+        }
+
+        .courses-section {
+            padding: 60px 0;
+            background: var(--bg-secondary);
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .course-card {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .course-image {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        .course-image.burnout {
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 100%);
+        }
+
+        .course-image.anxiety {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .course-image.depression {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .course-image.stress {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .course-image.resilience {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .course-image.relationships {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        }
+
+        .course-content {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .course-content h3 {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            min-height: 2.6rem;
+        }
+
+        .course-content p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex: 1;
+        }
+
+        .course-meta {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .course-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .course-meta i {
+            color: var(--primary);
+        }
+
+        .course-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white !important;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .course-btn:hover {
+            background: #5a67d8;
+            color: white !important;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        .search-bar {
+            max-width: 500px;
+            margin: 30px auto 0;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 1200px) {
+            .courses-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .library-hero h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                <span class="logo-text">EASE</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="peer-support.html" class="nav-link">Peer Support</a>
+                <a href="book-sessions.html" class="nav-link">Events</a>
+                <a href="resources.html" class="nav-link active">Resources</a>
+                <a href="find-therapist.html" class="nav-link">Find a Therapist</a>
+                <a href="chat.html" class="nav-link" id="chatLink" style="display: none;">Chat</a>
+                <a href="login.html" class="nav-link" id="loginLink">Login</a>
+                <div class="profile-dropdown" id="profileDropdown" style="display: none;">
+                    <a href="#" class="profile-link" id="profileLink">
+                        <i class="fa-solid fa-user"></i>
+                        <span id="userName">Profile</span>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="rewards.html">Rewards</a>
+                        <a href="#" id="signoutBtn">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode">
+                <i class="fa-solid fa-moon"></i>
+                <i class="fa-solid fa-sun"></i>
+            </button>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="library-hero">
+        <div class="container">
+            <a href="resources.html" class="back-link" style="color: white; opacity: 0.8;">
+                <i class="fa-solid fa-arrow-left"></i> Back to Resources
+            </a>
+            <h1>📚 Resource Library</h1>
+            <p>Explore our collection of educational courses designed to help you understand and manage your mental health journey.</p>
+            <div class="search-bar">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="courseSearch" placeholder="Search courses...">
+            </div>
+        </div>
+    </section>
+
+    <!-- Courses Section -->
+    <section class="courses-section">
+        <div class="container">
+            <h2 class="section-title">Available Courses</h2>
+            <div class="courses-grid" id="coursesGrid">
+                <!-- Course 1: Understanding Burnout -->
+                <div class="course-card" data-keywords="burnout exhaustion work tired fatigue" data-course="burnout">
+                    <div class="course-image burnout">
+                        🔥
+                    </div>
+                    <div class="course-content">
+                        <h3>Understanding Burnout</h3>
+                        <p>Learn to recognize the signs of burnout, understand its causes, and discover effective strategies to recover and prevent future episodes.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 45 mins</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 6 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                        </div>
+                        <a href="course-viewer.html?course=burnout" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+
+                <!-- Course 2: Understanding Anxiety Disorders -->
+                <div class="course-card" data-keywords="anxiety panic worry fear nervous" data-course="anxiety">
+                    <div class="course-image anxiety">
+                        😰
+                    </div>
+                    <div class="course-content">
+                        <h3>Understanding Anxiety Disorders</h3>
+                        <p>A comprehensive guide to understanding different types of anxiety disorders, their symptoms, and evidence-based coping techniques.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 1 hour</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 8 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                        </div>
+                        <a href="course-viewer.html?course=anxiety" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+
+                <!-- Course 3: Depression: Signs and Support -->
+                <div class="course-card" data-keywords="depression sad mood low energy hopeless" data-course="depression">
+                    <div class="course-image depression">
+                        💙
+                    </div>
+                    <div class="course-content">
+                        <h3>Depression: Signs and Support</h3>
+                        <p>Understand the signs of depression, learn how to support yourself or loved ones, and explore paths to recovery and healing.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 1.5 hours</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 10 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                        </div>
+                        <a href="course-viewer.html?course=depression" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+
+                <!-- Course 4: Stress Management Strategies -->
+                <div class="course-card" data-keywords="stress management coping pressure overwhelmed" data-course="stress">
+                    <div class="course-image stress">
+                        🌿
+                    </div>
+                    <div class="course-content">
+                        <h3>Stress Management Strategies</h3>
+                        <p>Master practical techniques for managing stress in your daily life, from breathing exercises to time management and mindfulness.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 50 mins</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 7 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                        </div>
+                        <a href="course-viewer.html?course=stress" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+
+                <!-- Course 5: Building Resilience -->
+                <div class="course-card" data-keywords="resilience strength bounce back tough strong" data-course="resilience">
+                    <div class="course-image resilience">
+                        💪
+                    </div>
+                    <div class="course-content">
+                        <h3>Building Resilience</h3>
+                        <p>Develop the mental and emotional tools to bounce back from adversity, build inner strength, and thrive through life's challenges.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 1 hour</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 8 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Intermediate</span>
+                        </div>
+                        <a href="course-viewer.html?course=resilience" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+
+                <!-- Course 6: Healthy Relationships Guide -->
+                <div class="course-card" data-keywords="relationships communication love boundaries friends family" data-course="relationships">
+                    <div class="course-image relationships">
+                        ❤️
+                    </div>
+                    <div class="course-content">
+                        <h3>Healthy Relationships Guide</h3>
+                        <p>Learn the foundations of healthy relationships, effective communication skills, setting boundaries, and nurturing meaningful connections.</p>
+                        <div class="course-meta">
+                            <span><i class="fa-regular fa-clock"></i> 1.5 hours</span>
+                            <span><i class="fa-regular fa-file-alt"></i> 9 modules</span>
+                            <span><i class="fa-solid fa-signal"></i> Beginner</span>
+                        </div>
+                        <a href="course-viewer.html?course=relationships" class="course-btn">Start Course</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="ease-logo.jpg" alt="EASE Logo" class="logo-image">
+                    <span class="logo-text">EASE</span>
+                </div>
+                <p class="footer-tagline">Calm support at your own pace</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 EASE. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Course search functionality
+        const searchInput = document.getElementById('courseSearch');
+        const coursesGrid = document.getElementById('coursesGrid');
+        const courseCards = document.querySelectorAll('.course-card');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+
+            courseCards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                const keywords = card.dataset.keywords.toLowerCase();
+
+                if (title.includes(searchTerm) || description.includes(searchTerm) || keywords.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
